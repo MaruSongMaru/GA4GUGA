@@ -1,0 +1,1 @@
+neci_pylib_path = '/home/song/CODE/neci_loc-project/build/python'
