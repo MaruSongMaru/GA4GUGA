@@ -1,10 +1,10 @@
 import sys
-sys.path.append('../GA_mod')
-import run_GA as ga
-import crossover as co
-import process_df
+sys.path.append('../src')
+from GA_mod import run_GA as ga
+from GA_mod import crossover as co
+from GA_mod import process_df
 import pandas as pd
-from measure_fitness import FitnessFunction
+from GA_mod.measure_fitness import FitnessFunction
 
 J = [[0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
      [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
