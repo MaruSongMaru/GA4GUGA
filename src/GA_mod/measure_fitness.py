@@ -4,9 +4,9 @@
 # But when targetting a minimum, -1 has to be multipled at the end to give the
 # minimum a larger score.
 import GA_mod
-from GA_mod import read_fcidump
-from GA_mod import population as pop
-from GA_mod import gen_ref_dicts
+import read_fcidump
+import population as pop
+import gen_ref_dicts
 import neci_guga
 from mypytoolbox import convert_reps
 from enum import Enum, auto
