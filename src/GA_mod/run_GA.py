@@ -1,9 +1,9 @@
 import numpy as np
-import population as pop
-import process_df
-import sampling
-import measure_fitness
-import crossover as co
+from GA_mod import population as pop
+from GA_mod import process_df
+from GA_mod import sampling
+from GA_mod import measure_fitness
+from GA_mod import crossover as co
 import subprocess
 
 def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size,

@@ -1,5 +1,3 @@
-import sys
-sys.path.append('../src')
 from GA_mod import run_GA as ga
 from GA_mod import crossover as co
 from GA_mod import process_df
