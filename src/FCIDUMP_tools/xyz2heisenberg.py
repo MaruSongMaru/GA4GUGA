@@ -44,6 +44,7 @@ def measure_distance(coord1: np.ndarray, coord2: np.ndarray) -> float:
 
 def gen_combinations(natom: int) -> list[tuple[int, int]]:
     return list(combinations(range(1, natom + 1), 2))
+
 def gen_J_matrix(xyzfile: str, distance_range: Optional[tuple[float, float]] = None) -> np.ndarray:
     """
     Generate a symmetric matrix of J coupling constants from atomic coordinates.
