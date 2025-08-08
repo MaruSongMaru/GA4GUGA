@@ -1,10 +1,10 @@
 class FCIDUMPReader:
-    def __init__(self, filename):
+    def __init__(self, filename: str):
         """Initialize the FCIDUMP reader with a filename."""
         self.filename = filename
-        self.two_body_integrals = {}  # (i,j,k,l) -> value
-        self.one_body_integrals = {}  # (i,j) -> value
-        self.orbital_energies = {}    # i -> value
+        self.two_body_integrals: dict[tuple[int, int, int, int], float] = {}  # (i,j,k,l) -> value
+        self.one_body_integrals: dict[tuple[int, int], float] = {}  # (i,j) -> value
+        self.orbital_energies: dict[int, float] = {}    # i -> value
         self.core_energy = 0.0
         self.read_file()
     
@@ -30,7 +30,7 @@ class FCIDUMPReader:
                 # Categorize and store the integral
                 self._store_integral(value, i, j, k, l)
     
-    def _store_integral(self, value, i, j, k, l):
+    def _store_integral(self, value: float, i: int, j: int, k: int, l: int) -> None:
         """Store integral in the appropriate category based on indices."""
         if i > 0 and j > 0 and k > 0 and l > 0:
             # Two-body integral
@@ -51,7 +51,7 @@ class FCIDUMPReader:
             # Core energy
             self.core_energy = value
     
-    def _canonical_indices(self, i, j, k, l):
+    def _canonical_indices(self, i: int, j: int, k: int, l: int) -> tuple[int, int, int, int]:
         """
         Return canonical ordering of indices to respect 8-fold symmetry:
         ijkl = jilk = ijlk = ... = klij = ...
@@ -81,7 +81,7 @@ class FCIDUMPReader:
                 # k,l has larger minimum, so it comes first
                 return (kl[0], kl[1], ij[0], ij[1])
     
-    def get_integral(self, i, j, k, l):
+    def get_integral(self, i: int, j: int, k: int, l: int) -> float:
         """
         Get the integral value for given indices.
         For two-body integrals, provide all four indices.
@@ -108,7 +108,7 @@ class FCIDUMPReader:
         else:
             raise ValueError("Invalid indices for integral retrieval.")
     
-    def get_integrals_dict(self, norb):
+    def get_integrals_dict(self, norb: int) -> dict[tuple[int, int, int, int], float]:
         """
         Returns a dictionary of all integrals with non-redundant indices.
 
@@ -159,8 +159,8 @@ class FCIDUMPReader:
         print(f"Number of orbital energies: {len(self.orbital_energies)}")
         print(f"Number of one-body integrals: {len(self.one_body_integrals)}")
         print(f"Number of two-body integrals: {len(self.two_body_integrals)}")
-    
-    def permute_integrals_dict(self, integral_dict, permutation, t_passive=True):
+
+    def permute_integrals_dict(self, integral_dict: dict[tuple[int, int, int, int], float], permutation: tuple[int], t_passive: bool = True) -> dict[tuple[int, int, int, int], float]:
         """
         Apply orbital permutation to integrals and maintain canonical ordering.
         
@@ -209,7 +209,7 @@ class FCIDUMPReader:
 
 
 # Keep a standalone version as a wrapper for backward compatibility
-def permute_integrals(exchange_integral_dict, permutation, t_passive=True):
+def permute_integrals(exchange_integral_dict: dict[tuple[int, int, int, int], float], permutation: tuple[int], t_passive: bool = True):
     """
     Legacy wrapper for FCIDUMPReader.permute_integrals_dict method.
     Creates a temporary FCIDUMPReader object to perform the permutation.
@@ -225,28 +225,28 @@ def permute_integrals(exchange_integral_dict, permutation, t_passive=True):
 # Example usage
 if __name__ == "__main__":
     import sys
-    
+
     if len(sys.argv) < 2:
         print("Usage: python read_fcidump.py <fcidump_file>")
         sys.exit(1)
-    
+
     fcidump_file = sys.argv[1]
     reader = FCIDUMPReader(fcidump_file)
     reader.summarize()
-    
+
     # Example of accessing integrals
     print("\nSome example integral values:")
     print(f"Core energy: {reader.get_integral(0, 0, 0, 0)}")
-    
+
     if reader.orbital_energies:
         first_orb = next(iter(reader.orbital_energies.keys()))
         print(f"Orbital energy for orbital {first_orb}: {reader.get_integral(first_orb, 0, 0, 0)}")
-    
+
     if reader.one_body_integrals:
         first_one_body = next(iter(reader.one_body_integrals.keys()))
         i, j = first_one_body
         print(f"One-body integral ({i},{j}): {reader.get_integral(i, j, 0, 0)}")
-    
+
     if reader.two_body_integrals:
         first_two_body = next(iter(reader.two_body_integrals.keys()))
         i, j, k, l = first_two_body
