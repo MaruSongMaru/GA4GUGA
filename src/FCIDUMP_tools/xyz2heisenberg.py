@@ -8,6 +8,7 @@ Copyright (c) 2025 Maru Song
 from FCIDUMP_tools import write_fcidump
 import numpy as np
 from itertools import combinations
+from typing import Optional
 
 def xyz_parser(xyzfile: str) -> tuple[list[str], np.ndarray]:
     """
@@ -43,8 +44,7 @@ def measure_distance(coord1: np.ndarray, coord2: np.ndarray) -> float:
 
 def gen_combinations(natom: int) -> list[tuple[int, int]]:
     return list(combinations(range(1, natom + 1), 2))
-
-def gen_J_matrix(xyzfile: str, distance_range: optional[tuple[float, float]] = None) -> np.ndarray:
+def gen_J_matrix(xyzfile: str, distance_range: Optional[tuple[float, float]] = None) -> np.ndarray:
     """
     Generate a symmetric matrix of J coupling constants from atomic coordinates.
     
