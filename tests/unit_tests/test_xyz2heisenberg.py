@@ -140,7 +140,6 @@ class TestMeasureDistance:
     ])
     def test_distance(self, coord1, coord2, expected):
         result = measure_distance(coord1, coord2)
-        print(result, expected)
         assert np.isclose(result, expected)
 
 
