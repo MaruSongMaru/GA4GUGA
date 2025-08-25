@@ -11,6 +11,7 @@ import numpy as np
 class DiagElement:
     def __init__(self, norb: int, IntegralClass):
         self.norb = norb
+        self.E_core = IntegralClass.core_energy
         self.t_ii = np.array([IntegralClass.get_integral(i, i, 0, 0) for i in range(1, self.norb + 1)])
         self.v_iiii = np.array([IntegralClass.get_integral(i, i, i, i) for i in range(1, self.norb + 1)])
         self.v_iijj = np.array([[IntegralClass.get_integral(i, i, j, j) for j in range(1, self.norb + 1)] for i in range(1, self.norb + 1)])
@@ -20,12 +21,15 @@ class DiagElement:
         CSF_stepvec = np.asarray(CSF_stepvec)
         return CSF_stepvec - (CSF_stepvec // 2)
 
-    def calc_diag_elem(self, CSF_stepvec: np.array, IntegralClass) -> float:
+    def calc_diag_elem(self, CSF_stepvec: np.array, add_core=True) -> float:
         CSF_occ = self.stepvec_to_occ(CSF_stepvec)
-        one_body = self.one_body_contrib(CSF_occ, IntegralClass)
-        two_body = self.two_body_contrib(CSF_stepvec, CSF_occ, IntegralClass)
+        one_body = self.one_body_contrib(CSF_occ)
+        two_body = self.two_body_contrib(CSF_stepvec, CSF_occ)
 
-        return one_body + two_body
+        if add_core:
+            return one_body + two_body + self.E_core
+        else:
+            return one_body + two_body
 
     def one_body_contrib(self, CSF_occ: np.array) -> float:
         contrib = np.dot(CSF_occ, self.t_ii)
