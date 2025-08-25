@@ -7,7 +7,7 @@ class FCIDUMPReader:
         self.orbital_energies: dict[int, float] = {}    # i -> value
         self.core_energy = 0.0
         self.read_file()
-    
+
     def read_file(self):
         """Read the FCIDUMP file and process the integrals."""
         with open(self.filename, 'r') as f:
@@ -16,20 +16,20 @@ class FCIDUMPReader:
                 line = line.strip()
                 if line.endswith("&END") or line == "/":
                     break
-            
+
             # Process the integral lines
             for line in f:
                 parts = line.strip().split()
                 if len(parts) != 5:
                     raise ValueError(f"Invalid line format: {line}")
-                
+
                 # Parse the line
                 value = float(parts[0])
                 i, j, k, l = map(int, parts[1:])
-                
+
                 # Categorize and store the integral
                 self._store_integral(value, i, j, k, l)
-    
+
     def _store_integral(self, value: float, i: int, j: int, k: int, l: int) -> None:
         """Store integral in the appropriate category based on indices."""
         if i > 0 and j > 0 and k > 0 and l > 0:
@@ -50,7 +50,7 @@ class FCIDUMPReader:
         elif i == 0 and j == 0 and k == 0 and l == 0:
             # Core energy
             self.core_energy = value
-    
+
     def _canonical_indices(self, i: int, j: int, k: int, l: int) -> tuple[int, int, int, int]:
         """
         Return canonical ordering of indices to respect 8-fold symmetry:
@@ -64,7 +64,7 @@ class FCIDUMPReader:
         # Sort i,j and k,l pairs internally (larger first)
         ij = (max(i, j), min(i, j))
         kl = (max(k, l), min(k, l))
-    
+
         # Compare the maximum values
         if ij[0] > kl[0]:
             # i,j has larger maximum, so it comes first
@@ -80,7 +80,7 @@ class FCIDUMPReader:
             else:
                 # k,l has larger minimum, so it comes first
                 return (kl[0], kl[1], ij[0], ij[1])
-    
+
     def get_integral(self, i: int, j: int, k: int, l: int) -> float:
         """
         Get the integral value for given indices.
@@ -107,8 +107,8 @@ class FCIDUMPReader:
             return self.core_energy
         else:
             raise ValueError("Invalid indices for integral retrieval.")
-    
-    def get_integrals_dict(self, norb: int) -> dict[tuple[int, int, int, int], float]:
+
+    def get_integral_dict(self, norb: int) -> dict[tuple[int, int, int, int], float]:
         """
         Returns a dictionary of all integrals with non-redundant indices.
 
@@ -160,7 +160,7 @@ class FCIDUMPReader:
         print(f"Number of one-body integrals: {len(self.one_body_integrals)}")
         print(f"Number of two-body integrals: {len(self.two_body_integrals)}")
 
-    def permute_integrals_dict(self, integral_dict: dict[tuple[int, int, int, int], float], permutation: tuple[int], t_passive: bool = True) -> dict[tuple[int, int, int, int], float]:
+    def permute_integral_dict(self, integral_dict: dict[tuple[int, int, int, int], float], permutation: tuple[int], t_passive: bool = True) -> dict[tuple[int, int, int, int], float]:
         """
         Apply orbital permutation to integrals and maintain canonical ordering.
         
@@ -185,7 +185,7 @@ class FCIDUMPReader:
             new_j = permutation.index(j)
             new_k = permutation.index(k)
             new_l = permutation.index(l)
-            
+
             # For special case of core energy and one-body terms, handle separately
             if (i, j, k, l) == (0, 0, 0, 0):
                 # Core energy - indices don't change
@@ -204,14 +204,14 @@ class FCIDUMPReader:
                 # Two-body integral - apply canonical ordering
                 new_indices = self._canonical_indices(new_i, new_j, new_k, new_l)
                 permuted_dict[new_indices] = value
-            
+
         return permuted_dict
 
 
 # Keep a standalone version as a wrapper for backward compatibility
 def permute_integrals(exchange_integral_dict: dict[tuple[int, int, int, int], float], permutation: tuple[int], t_passive: bool = True):
     """
-    Legacy wrapper for FCIDUMPReader.permute_integrals_dict method.
+    Legacy wrapper for FCIDUMPReader.permute_integral_dict method.
     Creates a temporary FCIDUMPReader object to perform the permutation.
     
     For new code, it's recommended to use the class method directly.
@@ -219,7 +219,7 @@ def permute_integrals(exchange_integral_dict: dict[tuple[int, int, int, int], fl
     # Create a dummy reader object (no file reading needed)
     dummy_reader = FCIDUMPReader.__new__(FCIDUMPReader)
     # Return the permuted integrals using the class method
-    return dummy_reader.permute_integrals_dict(exchange_integral_dict, permutation, t_passive)
+    return dummy_reader.permute_integral_dict(exchange_integral_dict, permutation, t_passive)
 
 
 # Example usage
@@ -253,5 +253,5 @@ if __name__ == "__main__":
         i,j,k,l = 1,2,3,4
         print(f"Two-body integral ({i},{j},{k},{l}): {reader.get_integral(i, j, k, l)}")
 
-    integrals_dict = reader.get_integrals_dict(8)
-    print(len(integrals_dict))
+    integral_dict = reader.get_integral_dict(8)
+    print(len(integral_dict))
