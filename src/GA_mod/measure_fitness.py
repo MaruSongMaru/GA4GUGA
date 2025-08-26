@@ -3,7 +3,7 @@
 # The sign of the fitness doesn't matter, as it is rescaled in sampling.py
 # But when targetting a minimum, -1 has to be multipled at the end to give the
 # minimum a larger score.
-from GA_mod import IntegralClass
+from FCIDUMP_tools import IntegralClass
 from enum import Enum, auto
 from GA_mod import extend_ordering
 from GA_mod import GUGA_diag
@@ -22,7 +22,7 @@ class FitnessFunction(Enum):
     # Only ud CSFs
     NEEL_FAST_DIAG_MIN_OSONLY = auto()
 
-def _gen_ref_diagelem_fitness(population, extended_pop, ref_dict, FCIDUMPClass, s, nel, norb, tHeisenberg):
+def _gen_ref_diagelem_fitness(population, extended_pop, ref_dict, FCIDUMPClass, norb, tHeisenberg):
     """Internal function that calculates fitness based on reference diagonal elements."""
     reduced_fitness = {}
     for chrom, extended_chrom  in zip(population, extended_pop):
@@ -116,7 +116,6 @@ def _max_fast_diag(population, extended_pop, J, csf_list):
             X = X_matrix(csf_stepvec)
             N = N_matrix(csf_stepvec)
             diagelem = -np.sum(N + J_reordered * X)
-            print(chrom, diagelem, csf_stepvec)
             max_val = max(max_val, diagelem)
 
         reduced_fitness[chrom] = max_val
@@ -319,7 +318,7 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, s, nel, n
             raise ValueError("csf_list is required for MIN_MAX_DIFF method")
         fitness_ht = _min_max_diff_fitness(POPClass.current_pop, extended_pop, FCIDUMPClass, norb, csf_list)
     elif method == FitnessFunction.REF_DIAGELEM:
-        fitness_ht =  _gen_ref_diagelem_fitness(POPClass.current_pop, extended_pop, ref_dict, FCIDUMPClass, s, nel, norb, tHeisenberg)
+        fitness_ht =  _gen_ref_diagelem_fitness(POPClass.current_pop, extended_pop, ref_dict, FCIDUMPClass, norb, tHeisenberg)
     elif method == FitnessFunction.MAX_DIAG_ELEM:
         fitness_ht = _max_diagelem(POPClass.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
     elif method == FitnessFunction.MIN_DIAG_ELEM:
