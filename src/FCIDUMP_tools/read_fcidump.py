@@ -158,10 +158,17 @@ class FCIDUMPReader:
 
     def permute_integrals(self, permutation: tuple[int], t_passive: bool = True):
         # permutation is applied to the natural ordering
-        self.one_body_integrals = self.permute_integral_dict(self._one_body_integrals_natural, permutation, t_passive)
-        self.two_body_integrals = self.permute_integral_dict(self._two_body_integrals_natural, permutation, t_passive)
+        if self._one_body_integrals_natural:
+            self.one_body_integrals = self.permute_integral_dict(
+                self._one_body_integrals_natural, permutation, t_passive)
+
+        if self._two_body_integrals_natural:
+            self.two_body_integrals = self.permute_integral_dict(
+                self._two_body_integrals_natural, permutation, t_passive)
+
         if self._orbital_energies_natural:
-            self.orbital_energies = self.permute_integral_dict(self._orbital_energies_natural, permutation, t_passive)
+            self.orbital_energies = self.permute_integral_dict(
+                self._orbital_energies_natural, permutation, t_passive)
 
     def permute_integral_dict(self, integral_dict: dict[tuple[int, ...], float], permutation: tuple[int], t_passive: bool = True) -> dict[tuple[int, int, int, int], float]:
         """
@@ -221,20 +228,6 @@ class FCIDUMPReader:
         print(f"Number of orbital energies: {len(self.orbital_energies)}")
         print(f"Number of one-body integrals: {len(self.one_body_integrals)}")
         print(f"Number of two-body integrals: {len(self.two_body_integrals)}")
-
-
-# Keep a standalone version as a wrapper for backward compatibility
-def permute_integrals(exchange_integral_dict: dict[tuple[int, int, int, int], float], permutation: tuple[int], t_passive: bool = True):
-    """
-    Legacy wrapper for FCIDUMPReader.permute_integral_dict method.
-    Creates a temporary FCIDUMPReader object to perform the permutation.
-    
-    For new code, it's recommended to use the class method directly.
-    """
-    # Create a dummy reader object (no file reading needed)
-    dummy_reader = FCIDUMPReader.__new__(FCIDUMPReader)
-    # Return the permuted integrals using the class method
-    return dummy_reader.permute_integral_dict(exchange_integral_dict, permutation, t_passive)
 
 
 # Example usage
