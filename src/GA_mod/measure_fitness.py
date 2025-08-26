@@ -6,11 +6,11 @@
 from GA_mod import read_fcidump
 from GA_mod import population as pop
 from GA_mod import gen_ref_dicts
-import neci_guga
 from mypytoolbox import convert_reps
 from enum import Enum, auto
 from GA_mod import extend_ordering
 import numpy as np
+from GA_mod import GUGA_diag
 
 class FitnessFunction(Enum):
     REF_DIAGELEM = auto()
@@ -29,71 +29,68 @@ class FitnessFunction(Enum):
     # Only ud CSFs
     NEEL_FAST_DIAG_MIN_OSONLY = auto()
 
-def _gen_ref_diagelem_fitness(population, extended_pop, ref_dict, fcidump, s, nel, norb, tHeisenberg):
+def _gen_ref_diagelem_fitness(population, extended_pop, ref_dict, FCIDUMPClass, s, nel, norb, tHeisenberg):
     """Internal function that calculates fitness based on reference diagonal elements."""
     reduced_fitness = {}
     for chrom, extended_chrom  in zip(population, extended_pop):
-        neci_guga.permute_orbs(extended_chrom, t_passive=True)
-        neci_guga.init_guga(fcidump, s, nel, norb)
-        CSF_ref = convert_reps.stepvec_to_definedet([ref_dict[orb] for orb in extended_chrom])
-        diagelem = neci_guga.csf_matel(CSF_ref, CSF_ref)
-        neci_guga.clear_guga()
+        # permute CSF
+        CSF_ref = [ref_dict[orb] for orb in extended_chrom]
+
+        FCIDUMPClass.permute_integrals(extended_chrom, t_passive=True)
+        GUGAClass = GUGA_diag.DiagElement(norb, FCIDUMPClass)
+
+        diagelem = GUGAClass.calc_diag_elem(CSF_ref, add_core=True)
+
         if tHeisenberg:
             reduced_fitness[chrom] = abs(diagelem)
         else:
             reduced_fitness[chrom] = diagelem
     return reduced_fitness
 
-def _min_max_diff_fitness(population, extended_pop, fcidump, s, nel, norb, csf_list):
+def _min_max_diff_fitness(population, extended_pop, FCIDUMPClass, s, nel, norb, csf_list):
     """Internal function that calculates fitness based on min-max difference."""
     reduced_fitness = {}
     for chrom, extended_chrom  in zip(population, extended_pop):
-        neci_guga.permute_orbs(extended_chrom, t_passive=True)
-        neci_guga.init_guga(fcidump, s, nel, norb)
+        FCIDUMPClass.permute_integrals(extended_chrom, t_passive=True)
+        GUGAClass = GUGA_diag.DiagElement(norb, FCIDUMPClass)
         min_val = float('inf')
         max_val = float('-inf')
         for csf_stepvec in csf_list:
-            csf = convert_reps.stepvec_to_definedet(csf_stepvec)
-            diagelem = neci_guga.csf_matel(csf, csf)
+            diagelem = GUGAClass.calc_diag_elem(csf_stepvec, add_core=True)
             min_val = min(min_val, diagelem)
             max_val = max(max_val, diagelem)
-        neci_guga.clear_guga()
         reduced_fitness[chrom] = max_val - min_val
     return reduced_fitness
 
-def _max_diagelem(population, extended_pop, fcidump, s, nel, norb, csf_list):
+def _max_diagelem(population, extended_pop, FCIDUMPClass, s, nel, norb, csf_list):
     """
     Internal function that calculates fitness based the max diagonal element
     using csf_list.
     """
     reduced_fitness = {}
     for chrom, extended_chrom  in zip(population, extended_pop):
-        neci_guga.permute_orbs(extended_chrom, t_passive=True)
-        neci_guga.init_guga(fcidump, s, nel, norb)
+        FCIDUMPClass.permute_integrals(extended_chrom, t_passive=True)
+        GUGAClass = GUGA_diag.DiagElement(norb, FCIDUMPClass)
         max_val = float('-inf')
         for csf_stepvec in csf_list:
-            csf = convert_reps.stepvec_to_definedet(csf_stepvec)
-            diagelem = neci_guga.csf_matel(csf, csf)
+            diagelem = GUGAClass.calc_diag_elem(csf_stepvec, add_core=True)
             max_val = max(max_val, diagelem)
-        neci_guga.clear_guga()
         reduced_fitness[chrom] = max_val
     return reduced_fitness
 
-def _min_diagelem(population, extended_pop, fcidump, s, nel, norb, csf_list):
+def _min_diagelem(population, extended_pop, FCIDUMPClass, s, nel, norb, csf_list):
     """
     Internal function that calculates fitness based the min diagonal element
     using csf_list.
     """
     reduced_fitness = {}
     for chrom, extended_chrom  in zip(population, extended_pop):
-        neci_guga.permute_orbs(extended_chrom, t_passive=True)
-        neci_guga.init_guga(fcidump, s, nel, norb)
+        FCIDUMPClass.permute_integrals(extended_chrom, t_passive=True)
+        GUGAClass = GUGA_diag.DiagElement(norb, FCIDUMPClass)
         min_val = float('inf')
         for csf_stepvec in csf_list:
-            csf = convert_reps.stepvec_to_definedet(csf_stepvec)
-            diagelem = neci_guga.csf_matel(csf, csf)
+            diagelem = GUGAClass.calc_diag_elem(csf_stepvec, add_core=True)
             min_val = min(min_val, diagelem)
-        neci_guga.clear_guga()
         reduced_fitness[chrom] = min_val * -1
     return reduced_fitness
 
@@ -324,14 +321,14 @@ def X_matrix_openshell_only(d_vec):
     return X
 #------------------------------------------------------------------------------#
 
-def calculate_fitness(method: FitnessFunction, pop_class, fcidump, s, nel, norb, **kwargs):
+def calculate_fitness(method: FitnessFunction, pop_class, FCIDUMPClass, s, nel, norb, **kwargs):
     """
     Wrapper function to calculate fitness using specified method.
 
     Args:
         method (FitnessFunction): The method to use for fitness score evaluation
         pop_class: Population class instance
-        fcidump: FCIDUMP file
+        FCIDUMPClass: FCIDUMP class instance
         s: Spin
         nel: Number of electrons
         norb: Number of orbitals
@@ -369,13 +366,13 @@ def calculate_fitness(method: FitnessFunction, pop_class, fcidump, s, nel, norb,
     if method == FitnessFunction.MIN_MAX_DIFF:
         if csf_list is None:
             raise ValueError("csf_list is required for MIN_MAX_DIFF method")
-        fitness_ht = _min_max_diff_fitness(pop_class.current_pop, extended_pop, fcidump, s, nel, norb, csf_list)
+        fitness_ht = _min_max_diff_fitness(pop_class.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
     elif method == FitnessFunction.REF_DIAGELEM:
-        fitness_ht =  _gen_ref_diagelem_fitness(pop_class.current_pop, extended_pop, ref_dict, fcidump, s, nel, norb, tHeisenberg)
+        fitness_ht =  _gen_ref_diagelem_fitness(pop_class.current_pop, extended_pop, ref_dict, FCIDUMPClass, s, nel, norb, tHeisenberg)
     elif method == FitnessFunction.MAX_DIAG_ELEM:
-        fitness_ht = _max_diagelem(pop_class.current_pop, extended_pop, fcidump, s, nel, norb, csf_list)
+        fitness_ht = _max_diagelem(pop_class.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
     elif method == FitnessFunction.MIN_DIAG_ELEM:
-        fitness_ht = _min_diagelem(pop_class.current_pop, extended_pop, fcidump, s, nel, norb, csf_list)
+        fitness_ht = _min_diagelem(pop_class.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
     elif method == FitnessFunction.NEEL_FAST_DIAG:
         if J is None:
             raise ValueError("J matrix is required for NEEL_FAST_DIAG method")
