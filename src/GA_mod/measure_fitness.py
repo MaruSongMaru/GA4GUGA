@@ -22,10 +22,6 @@ class FitnessFunction(Enum):
     NEEL_FAST_DIAG_MAX = auto()
     MIN_FAST_DIAG = auto()
     MAX_FAST_DIAG = auto()
-    # From a given ordering, measure all 7C3 (the ordering gives the fist U side
-    # and we should choose the rest 3 U sites) colinear diagonal elements
-    EIGHT_SITE_TAILORED_MAX_TEST = auto()
-    EIGHT_SITE_TAILORED_MIN_TEST = auto()
     # Only ud CSFs
     NEEL_FAST_DIAG_MIN_OSONLY = auto()
 
@@ -109,48 +105,6 @@ def _neel_fast_diag(population, extended_pop, J, ref_dict, tMin):
             reduced_fitness[chrom] = -np.sum(N + J_reordered * X)
         else:
             reduced_fitness[chrom] = np.sum(N + J_reordered * X)
-    return reduced_fitness
-
-def _eight_site_min(population, extended_pop, J):
-    reduced_fitness = {}
-    J = np.array(J)
-    for chrom, extended_chrom  in zip(population, extended_pop):
-        ref_dict_list = gen_ref_dicts.create_site_dictionary(extended_chrom[0])
-        sorting_arr = np.array(extended_chrom) - 1
-        J_reordered = J[np.ix_(sorting_arr, sorting_arr)]
-        min_val = float('inf')
-        for ref_dict in ref_dict_list:
-            csf_stepvec = [ref_dict[i] for i in extended_chrom]
-            if not pop.is_csf_valid(extended_chrom, ref_dict):
-                continue
-            X = X_matrix(csf_stepvec)
-            N = N_matrix(csf_stepvec)
-            diagelem = np.sum(N + J_reordered * X)
-            min_val = min(min_val, diagelem)
-
-        reduced_fitness[chrom] = min_val * -1
-
-    return reduced_fitness
-
-def _eight_site_max(population, extended_pop, J):
-    reduced_fitness = {}
-    J = np.array(J)
-    for chrom, extended_chrom  in zip(population, extended_pop):
-        ref_dict_list = gen_ref_dicts.create_site_dictionary(extended_chrom[0])
-        sorting_arr = np.array(extended_chrom) - 1
-        J_reordered = J[np.ix_(sorting_arr, sorting_arr)]
-        max_val = float('-inf')
-        for ref_dict in ref_dict_list:
-            csf_stepvec = [ref_dict[i] for i in extended_chrom]
-            if not pop.is_csf_valid(extended_chrom, ref_dict):
-                continue
-            X = X_matrix(csf_stepvec)
-            N = N_matrix(csf_stepvec)
-            diagelem = np.sum(N + J_reordered * X)
-            max_val = max(max_val, diagelem)
-
-        reduced_fitness[chrom] = max_val
-
     return reduced_fitness
 
 def _max_fast_diag(population, extended_pop, J, csf_list):
@@ -403,14 +357,6 @@ def calculate_fitness(method: FitnessFunction, pop_class, FCIDUMPClass, s, nel, 
         if csf_list is None:
             raise ValueError("csf_list is required for MIN_FAST_DIAG method")
         fitness_ht = _min_fast_diag(pop_class.current_pop, extended_pop, J, csf_list)
-    elif method == FitnessFunction.EIGHT_SITE_TAILORED_MIN_TEST:
-        if J is None:
-            raise ValueError("J matrix is required for EIGHT_SITE_TAILORED_MIN_TEST method")
-        fitness_ht = _eight_site_min(pop_class.current_pop, extended_pop, J)
-    elif method == FitnessFunction.EIGHT_SITE_TAILORED_MAX_TEST:
-        if J is None:
-            raise ValueError("J matrix is required for EIGHT_SITE_TAILORED_MAX_TEST method")
-        fitness_ht = _eight_site_max(pop_class.current_pop, extended_pop, J)
     elif method == FitnessFunction.NEEL_FAST_DIAG_MIN_OSONLY:
         if J is None:
             raise ValueError("J matrix is required for NEEL_FAST_DIAG_MIN_OSONLY method")
