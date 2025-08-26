@@ -10,7 +10,7 @@ from GA_mod import GUGA_diag
 import numpy as np
 
 class FitnessFunction(Enum):
-    REF_DIAGELEM = auto()
+    DIAG_ELEM_SMS_MAPPING = auto()
     MIN_MAX_DIFF = auto()
     MAX_DIAG_ELEM = auto()
     MIN_DIAG_ELEM = auto()
@@ -22,19 +22,19 @@ class FitnessFunction(Enum):
     # Only ud CSFs
     NEEL_FAST_DIAG_MIN_OSONLY = auto()
 
-def _gen_ref_diagelem_fitness(population, extended_pop, ref_dict, FCIDUMPClass, norb, tHeisenberg):
+def _diag_elem_sms_mapping(population, extended_pop, sms_mapping_dict, FCIDUMPClass, norb, tMinimize):
     """Internal function that calculates fitness based on reference diagonal elements."""
     reduced_fitness = {}
     for chrom, extended_chrom  in zip(population, extended_pop):
         # permute CSF
-        CSF_ref = [ref_dict[orb] for orb in extended_chrom]
+        CSF_ref = [sms_mapping_dict[orb] for orb in extended_chrom]
 
         FCIDUMPClass.permute_integrals(extended_chrom, t_passive=True)
         GUGAClass = GUGA_diag.DiagElement(norb, FCIDUMPClass)
 
         diagelem = GUGAClass.calc_diag_elem(CSF_ref, add_core=True)
 
-        if tHeisenberg:
+        if tMinimize:
             reduced_fitness[chrom] = abs(diagelem)
         else:
             reduced_fitness[chrom] = diagelem
@@ -87,14 +87,14 @@ def _min_diagelem(population, extended_pop, FCIDUMPClass, s, nel, norb, csf_list
         reduced_fitness[chrom] = min_val * -1
     return reduced_fitness
 
-def _neel_fast_diag(population, extended_pop, J, ref_dict, tMin):
+def _neel_fast_diag(population, extended_pop, J, sms_mapping_dict, tMin):
     reduced_fitness = {}
     J = np.array(J)
     for chrom, extended_chrom  in zip(population, extended_pop):
         sorting_arr = np.array(extended_chrom) - 1
         J_reordered = J[np.ix_(sorting_arr, sorting_arr)]
 
-        csf_stepvec = [ref_dict[i] for i in extended_chrom]
+        csf_stepvec = [sms_mapping_dict[i] for i in extended_chrom]
         X = X_matrix(csf_stepvec)
         N = N_matrix(csf_stepvec)
 
@@ -145,14 +145,14 @@ def _min_fast_diag(population, extended_pop, J, csf_list):
 
     return reduced_fitness
 
-def _neel_fast_diag_min_openshell(population, extended_pop, J, ref_dict):
+def _neel_fast_diag_min_openshell(population, extended_pop, J, sms_mapping_dict):
     reduced_fitness = {}
     J = np.array(J)
     for chrom, extended_chrom  in zip(population, extended_pop):
         sorting_arr = np.array(extended_chrom) - 1
         J_reordered = J[np.ix_(sorting_arr, sorting_arr)]
 
-        csf_stepvec = [ref_dict[i] for i in extended_chrom]
+        csf_stepvec = [sms_mapping_dict[i] for i in extended_chrom]
         X = X_matrix_openshell_only(csf_stepvec)
 
         reduced_fitness[chrom] = np.sum(J_reordered * X) * -1
@@ -297,9 +297,9 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, s, nel, n
     on_site_permutation = kwargs.get('on_site_permutation', None)
     num_prefix = kwargs.get('num_prefix', 0)
     num_suffix = kwargs.get('num_suffix', 0)
-    ref_dict = POPClass.ref_dict
+    sms_mapping_dict = POPClass.sms_mapping_dict
     csf_list = kwargs.get('csf_list', None)
-    tHeisenberg = kwargs.get('tHeisenberg', False)
+    tMinimize = kwargs.get('tMinimize', False)
     J = kwargs.get('J', None)
     if on_site_permutation is None and (num_prefix != 0 or num_suffix != 0):
         raise ValueError("on_site_permutation is required for num_prefix and"
@@ -317,8 +317,8 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, s, nel, n
         if csf_list is None:
             raise ValueError("csf_list is required for MIN_MAX_DIFF method")
         fitness_ht = _min_max_diff_fitness(POPClass.current_pop, extended_pop, FCIDUMPClass, norb, csf_list)
-    elif method == FitnessFunction.REF_DIAGELEM:
-        fitness_ht =  _gen_ref_diagelem_fitness(POPClass.current_pop, extended_pop, ref_dict, FCIDUMPClass, norb, tHeisenberg)
+    elif method == FitnessFunction.DIAG_ELEM_SMS_MAPPING:
+        fitness_ht =  _diag_elem_sms_mapping(POPClass.current_pop, extended_pop, sms_mapping_dict, FCIDUMPClass, norb, tMinimize)
     elif method == FitnessFunction.MAX_DIAG_ELEM:
         fitness_ht = _max_diagelem(POPClass.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
     elif method == FitnessFunction.MIN_DIAG_ELEM:
@@ -326,21 +326,21 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, s, nel, n
     elif method == FitnessFunction.NEEL_FAST_DIAG:
         if J is None:
             raise ValueError("J matrix is required for NEEL_FAST_DIAG method")
-        if ref_dict is None:
-            raise ValueError("ref_dict is required for NEEL_FAST_DIAG method")
-        fitness_ht = _neel_fast_diag(POPClass.current_pop, extended_pop, J, ref_dict, True)
+        if sms_mapping_dict is None:
+            raise ValueError("sms_mapping_dict is required for NEEL_FAST_DIAG method")
+        fitness_ht = _neel_fast_diag(POPClass.current_pop, extended_pop, J, sms_mapping_dict, True)
     elif method == FitnessFunction.NEEL_FAST_DIAG_MIN:
         if J is None:
             raise ValueError("J matrix is required for NEEL_FAST_DIAG_MIN method")
-        if ref_dict is None:
-            raise ValueError("ref_dict is required for NEEL_FAST_DIAG_MIN method")
-        fitness_ht = _neel_fast_diag(POPClass.current_pop, extended_pop, J, ref_dict, True)
+        if sms_mapping_dict is None:
+            raise ValueError("sms_mapping_dict is required for NEEL_FAST_DIAG_MIN method")
+        fitness_ht = _neel_fast_diag(POPClass.current_pop, extended_pop, J, sms_mapping_dict, True)
     elif method == FitnessFunction.NEEL_FAST_DIAG_MAX:
         if J is None:
             raise ValueError("J matrix is required for NEEL_FAST_DIAG_MAX method")
-        if ref_dict is None:
-            raise ValueError("ref_dict is required for NEEL_FAST_DIAG_MAX method")
-        fitness_ht = _neel_fast_diag(POPClass.current_pop, extended_pop, J, ref_dict, False)
+        if sms_mapping_dict is None:
+            raise ValueError("sms_mapping_dict is required for NEEL_FAST_DIAG_MAX method")
+        fitness_ht = _neel_fast_diag(POPClass.current_pop, extended_pop, J, sms_mapping_dict, False)
     elif method == FitnessFunction.MAX_FAST_DIAG:
         if J is None:
             raise ValueError("J matrix is required for MAX_FAST_DIAG method")
@@ -356,9 +356,9 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, s, nel, n
     elif method == FitnessFunction.NEEL_FAST_DIAG_MIN_OSONLY:
         if J is None:
             raise ValueError("J matrix is required for NEEL_FAST_DIAG_MIN_OSONLY method")
-        if ref_dict is None:
-            raise ValueError("ref_dict is required for NEEL_FAST_DIAG_MIN_OSONLY method")
-        fitness_ht = _neel_fast_diag_min_openshell(POPClass.current_pop, extended_pop, J, ref_dict)
+        if sms_mapping_dict is None:
+            raise ValueError("sms_mapping_dict is required for NEEL_FAST_DIAG_MIN_OSONLY method")
+        fitness_ht = _neel_fast_diag_min_openshell(POPClass.current_pop, extended_pop, J, sms_mapping_dict)
     else:
         raise ValueError(f"Unknown fitness method: {method}")
 

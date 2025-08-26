@@ -19,8 +19,8 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
     log_file_name = kwargs.get('log_file_name', 'progress.log')
     pop_filename = kwargs.get('pop_file_name', 'current_pop.log')
     git_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
-    ref_csf = kwargs.get('ref_csf', None)
-    ref_ordering = kwargs.get('ref_ordering', None)
+    sms_ref_csf = kwargs.get('sms_ref_csf', None)
+    sms_ref_ordering = kwargs.get('sms_ref_ordering', None)
     cluster_period = kwargs.get('cluster_period', 5)
     stagnation_limit = kwargs.get('stagnation_limit', max(100, generations // 100))
 
@@ -42,7 +42,7 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
         log_file.write("\n")
 
     POPClass = pop.Population(num_chroms, restricted_ordering_len, elite_size,
-                               ref_csf, ref_ordering,
+                               sms_ref_csf, sms_ref_ordering,
                                restart_filename=restart_filename)
 
     FCIDUMPClass = IntegralClass.FCIDUMPReader(fcidump)

@@ -1,17 +1,17 @@
 import random
 
 class Population:
-    def __init__(self, num_chroms, ordering_len, elite_size, ref_csf=None,
-                 ref_ordering=None, restart_filename=None):
+    def __init__(self, num_chroms, ordering_len, elite_size, sms_ref_csf=None,
+                 sms_ref_ordering=None, restart_filename=None):
         self.num_chroms = num_chroms
         self.ordering_len = ordering_len
         self.elite_size = elite_size
-        # ref_csf assumes the stepvector notation
-        self.ref_provided = ref_csf is not None and ref_ordering is not None
-        if self.ref_provided:
-            self.ref_dict = {k:v for k,v in zip(ref_ordering, ref_csf)}
+        # sms_ref_csf assumes the stepvector notation
+        self.sms_ref_provided = sms_ref_csf is not None and sms_ref_ordering is not None
+        if self.sms_ref_provided:
+            self.sms_mapping_dict = {k:v for k,v in zip(sms_ref_ordering, sms_ref_csf)}
         else:
-            self.ref_dict = None
+            self.sms_mapping_dict = None
         if restart_filename is not None:
             self.current_pop = self.read_population(restart_filename)
         else:
@@ -25,8 +25,8 @@ class Population:
         while len(population) < self.num_chroms:
             chrom = tuple(random.sample(range(1, self.ordering_len + 1),
                                         self.ordering_len))
-            if ((self.ref_provided and is_csf_valid(chrom, self.ref_dict))
-                or not self.ref_provided):
+            if ((self.sms_ref_provided and is_csf_valid(chrom, self.sms_mapping_dict))
+                or not self.sms_ref_provided):
                 population.append(chrom)
 
         return population
@@ -42,9 +42,9 @@ class Population:
                     mutated_chrom[gene1], mutated_chrom[gene2]\
                   = mutated_chrom[gene2], mutated_chrom[gene1]
 
-                    # prevent invald CSF
-                    if self.ref_provided:
-                        while not is_csf_valid(mutated_chrom, self.ref_dict):
+                    # prevent invalid CSF
+                    if self.sms_ref_provided:
+                        while not is_csf_valid(mutated_chrom, self.sms_mapping_dict):
                             mutated_chrom = list(self.current_pop[i])
                             gene2 = random.sample(range(0, self.ordering_len), 1)[0]
                             mutated_chrom[gene1], mutated_chrom[gene2]\
@@ -81,8 +81,8 @@ class Population:
 #            for cluster in clusters:
 #                result.extend(cluster)
 #
-#            if self.ref_provided:
-#                while not is_csf_valid(tuple(result), self.ref_dict):
+#            if self.sms_ref_provided:
+#                while not is_csf_valid(tuple(result), self.sms_mapping_dict):
 #                    result = []
 #                    clusters = []
 #
@@ -156,9 +156,9 @@ class Population:
             max_attempts = 10
             while crossover_counter < max_attempts:
                 offspring = crossover_function(pool[i], pool[len(pool)-i-1])
-                if ((self.ref_provided
-                     and is_csf_valid(offspring, self.ref_dict))
-                    or not self.ref_provided):
+                if ((self.sms_ref_provided
+                     and is_csf_valid(offspring, self.sms_mapping_dict))
+                    or not self.sms_ref_provided):
                     offsprings.append(tuple(offspring))
                     break
                 crossover_counter += 1
@@ -167,7 +167,7 @@ class Population:
 #                print('Create a new offspring randomly')
                 offspring = random.sample(range(1, self.ordering_len + 1),
                                           self.ordering_len)
-                while not is_csf_valid(offspring, self.ref_dict):
+                while not is_csf_valid(offspring, self.sms_mapping_dict):
                     offspring = random.sample(range(1, self.ordering_len + 1),
                                               self.ordering_len)
                 offsprings.append(tuple(offspring))
@@ -208,7 +208,7 @@ class Population:
                 if len(chromosome) != self.ordering_len:
                     raise ValueError(f"Chromosome length {len(chromosome)} "
                                      f"doesn't match expected length {self.ordering_len}")
-                if self.ref_provided and not is_csf_valid(chromosome, self.ref_dict):
+                if self.sms_ref_provided and not is_csf_valid(chromosome, self.sms_mapping_dict):
                     raise ValueError(f"Chromosome {chromosome} is not CSF compatible")
                     
                 chromosomes.append(chromosome)
@@ -222,12 +222,12 @@ class Population:
 
 #-------------------------------------------------------------------------------
 
-def is_csf_valid(ordering, ref_dict):
+def is_csf_valid(ordering, sms_mapping_dict):
     cumul_spin = 0
     for i in ordering:
-        if ref_dict[i] == 1:
+        if sms_mapping_dict[i] == 1:
             cumul_spin += 1
-        elif ref_dict[i] == 2:
+        elif sms_mapping_dict[i] == 2:
             cumul_spin -= 1
 
         if cumul_spin < 0:
