@@ -3,14 +3,11 @@
 # The sign of the fitness doesn't matter, as it is rescaled in sampling.py
 # But when targetting a minimum, -1 has to be multipled at the end to give the
 # minimum a larger score.
-from GA_mod import read_fcidump
-from GA_mod import population as pop
-from GA_mod import gen_ref_dicts
-from mypytoolbox import convert_reps
+from GA_mod import IntegralClass
 from enum import Enum, auto
 from GA_mod import extend_ordering
-import numpy as np
 from GA_mod import GUGA_diag
+import numpy as np
 
 class FitnessFunction(Enum):
     REF_DIAGELEM = auto()
@@ -43,7 +40,7 @@ def _gen_ref_diagelem_fitness(population, extended_pop, ref_dict, FCIDUMPClass, 
             reduced_fitness[chrom] = diagelem
     return reduced_fitness
 
-def _min_max_diff_fitness(population, extended_pop, FCIDUMPClass, s, nel, norb, csf_list):
+def _min_max_diff_fitness(population, extended_pop, FCIDUMPClass, norb, csf_list):
     """Internal function that calculates fitness based on min-max difference."""
     reduced_fitness = {}
     for chrom, extended_chrom  in zip(population, extended_pop):
@@ -174,7 +171,7 @@ def J_mat_from_fcidump(fcidump_file, norb):
     Returns:
         np.ndarray: J matrix.
     """
-    reader = read_fcidump.FCIDUMPReader(fcidump_file)
+    reader = IntegralClass.FCIDUMPReader(fcidump_file)
     J = np.zeros((norb, norb))
     for i in range(norb):
         for j in range(i + 1, norb):
@@ -320,7 +317,7 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, s, nel, n
     if method == FitnessFunction.MIN_MAX_DIFF:
         if csf_list is None:
             raise ValueError("csf_list is required for MIN_MAX_DIFF method")
-        fitness_ht = _min_max_diff_fitness(POPClass.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
+        fitness_ht = _min_max_diff_fitness(POPClass.current_pop, extended_pop, FCIDUMPClass, norb, csf_list)
     elif method == FitnessFunction.REF_DIAGELEM:
         fitness_ht =  _gen_ref_diagelem_fitness(POPClass.current_pop, extended_pop, ref_dict, FCIDUMPClass, s, nel, norb, tHeisenberg)
     elif method == FitnessFunction.MAX_DIAG_ELEM:

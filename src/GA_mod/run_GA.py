@@ -4,7 +4,7 @@ from GA_mod import process_df
 from GA_mod import sampling
 from GA_mod import measure_fitness
 from GA_mod import crossover as co
-from FCIDUMP_tools import read_fcidump
+from FCIDUMP_tools import IntegralClass
 import subprocess
 
 def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size,
@@ -45,7 +45,7 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
                                ref_csf, ref_ordering,
                                restart_filename=restart_filename)
 
-    FCIDUMPClass = read_fcidump.FCIDUMPReader(fcidump)
+    FCIDUMPClass = IntegralClass.FCIDUMPReader(fcidump)
 
     # Track best fitness and stagnation
     stagnation_counter = 0

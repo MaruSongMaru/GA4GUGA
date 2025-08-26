@@ -235,7 +235,7 @@ if __name__ == "__main__":
     import sys
 
     if len(sys.argv) < 2:
-        print("Usage: python read_fcidump.py <fcidump_file>")
+        print("Usage: python IntegralClass.py <fcidump_file>")
         sys.exit(1)
 
     fcidump_file = sys.argv[1]

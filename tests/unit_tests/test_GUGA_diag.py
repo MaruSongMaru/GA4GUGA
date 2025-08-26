@@ -1,5 +1,5 @@
 import pytest
-from FCIDUMP_tools.read_fcidump import *
+from FCIDUMP_tools.IntegralClass import *
 from GA_mod.GUGA_diag import *
 import numpy as np
 
