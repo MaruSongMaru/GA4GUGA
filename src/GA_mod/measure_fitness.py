@@ -275,13 +275,13 @@ def X_matrix_openshell_only(d_vec):
     return X
 #------------------------------------------------------------------------------#
 
-def calculate_fitness(method: FitnessFunction, pop_class, FCIDUMPClass, s, nel, norb, **kwargs):
+def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, s, nel, norb, **kwargs):
     """
     Wrapper function to calculate fitness using specified method.
 
     Args:
         method (FitnessFunction): The method to use for fitness score evaluation
-        pop_class: Population class instance
+        POPClass: Population class instance
         FCIDUMPClass: FCIDUMP class instance
         s: Spin
         nel: Number of electrons
@@ -301,7 +301,7 @@ def calculate_fitness(method: FitnessFunction, pop_class, FCIDUMPClass, s, nel, 
     on_site_permutation = kwargs.get('on_site_permutation', None)
     num_prefix = kwargs.get('num_prefix', 0)
     num_suffix = kwargs.get('num_suffix', 0)
-    ref_dict = pop_class.ref_dict
+    ref_dict = POPClass.ref_dict
     csf_list = kwargs.get('csf_list', None)
     tHeisenberg = kwargs.get('tHeisenberg', False)
     J = kwargs.get('J', None)
@@ -313,56 +313,56 @@ def calculate_fitness(method: FitnessFunction, pop_class, FCIDUMPClass, s, nel, 
     if on_site_permutation is not None:
         extended_pop = [extend_ordering.extend_ordering(ordering, 
             on_site_permutation, num_prefix, num_suffix) 
-            for ordering in pop_class.current_pop]
+            for ordering in POPClass.current_pop]
     else:
-        extended_pop = pop_class.current_pop
+        extended_pop = POPClass.current_pop
 
     if method == FitnessFunction.MIN_MAX_DIFF:
         if csf_list is None:
             raise ValueError("csf_list is required for MIN_MAX_DIFF method")
-        fitness_ht = _min_max_diff_fitness(pop_class.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
+        fitness_ht = _min_max_diff_fitness(POPClass.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
     elif method == FitnessFunction.REF_DIAGELEM:
-        fitness_ht =  _gen_ref_diagelem_fitness(pop_class.current_pop, extended_pop, ref_dict, FCIDUMPClass, s, nel, norb, tHeisenberg)
+        fitness_ht =  _gen_ref_diagelem_fitness(POPClass.current_pop, extended_pop, ref_dict, FCIDUMPClass, s, nel, norb, tHeisenberg)
     elif method == FitnessFunction.MAX_DIAG_ELEM:
-        fitness_ht = _max_diagelem(pop_class.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
+        fitness_ht = _max_diagelem(POPClass.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
     elif method == FitnessFunction.MIN_DIAG_ELEM:
-        fitness_ht = _min_diagelem(pop_class.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
+        fitness_ht = _min_diagelem(POPClass.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
     elif method == FitnessFunction.NEEL_FAST_DIAG:
         if J is None:
             raise ValueError("J matrix is required for NEEL_FAST_DIAG method")
         if ref_dict is None:
             raise ValueError("ref_dict is required for NEEL_FAST_DIAG method")
-        fitness_ht = _neel_fast_diag(pop_class.current_pop, extended_pop, J, ref_dict, True)
+        fitness_ht = _neel_fast_diag(POPClass.current_pop, extended_pop, J, ref_dict, True)
     elif method == FitnessFunction.NEEL_FAST_DIAG_MIN:
         if J is None:
             raise ValueError("J matrix is required for NEEL_FAST_DIAG_MIN method")
         if ref_dict is None:
             raise ValueError("ref_dict is required for NEEL_FAST_DIAG_MIN method")
-        fitness_ht = _neel_fast_diag(pop_class.current_pop, extended_pop, J, ref_dict, True)
+        fitness_ht = _neel_fast_diag(POPClass.current_pop, extended_pop, J, ref_dict, True)
     elif method == FitnessFunction.NEEL_FAST_DIAG_MAX:
         if J is None:
             raise ValueError("J matrix is required for NEEL_FAST_DIAG_MAX method")
         if ref_dict is None:
             raise ValueError("ref_dict is required for NEEL_FAST_DIAG_MAX method")
-        fitness_ht = _neel_fast_diag(pop_class.current_pop, extended_pop, J, ref_dict, False)
+        fitness_ht = _neel_fast_diag(POPClass.current_pop, extended_pop, J, ref_dict, False)
     elif method == FitnessFunction.MAX_FAST_DIAG:
         if J is None:
             raise ValueError("J matrix is required for MAX_FAST_DIAG method")
         if csf_list is None:
             raise ValueError("csf_list is required for MAX_FAST_DIAG method")
-        fitness_ht = _max_fast_diag(pop_class.current_pop, extended_pop, J, csf_list)
+        fitness_ht = _max_fast_diag(POPClass.current_pop, extended_pop, J, csf_list)
     elif method == FitnessFunction.MIN_FAST_DIAG:
         if J is None:
             raise ValueError("J matrix is required for MIN_FAST_DIAG method")
         if csf_list is None:
             raise ValueError("csf_list is required for MIN_FAST_DIAG method")
-        fitness_ht = _min_fast_diag(pop_class.current_pop, extended_pop, J, csf_list)
+        fitness_ht = _min_fast_diag(POPClass.current_pop, extended_pop, J, csf_list)
     elif method == FitnessFunction.NEEL_FAST_DIAG_MIN_OSONLY:
         if J is None:
             raise ValueError("J matrix is required for NEEL_FAST_DIAG_MIN_OSONLY method")
         if ref_dict is None:
             raise ValueError("ref_dict is required for NEEL_FAST_DIAG_MIN_OSONLY method")
-        fitness_ht = _neel_fast_diag_min_openshell(pop_class.current_pop, extended_pop, J, ref_dict)
+        fitness_ht = _neel_fast_diag_min_openshell(POPClass.current_pop, extended_pop, J, ref_dict)
     else:
         raise ValueError(f"Unknown fitness method: {method}")
 
