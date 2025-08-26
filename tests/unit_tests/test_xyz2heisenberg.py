@@ -2,7 +2,7 @@ import pytest
 from FCIDUMP_tools.xyz2heisenberg import *
 import numpy as np
 
-FILEPATH = "../extra_files/"
+FILEPATH = "../../extra_files/"
 PN_parsed = (
     ['Fe', 'Fe', 'Fe', 'Fe', 'Fe', 'Fe', 'Fe', 'Fe', 'N', 'C', 'C', 'O', 'C',
      'S', 'N', 'C', 'C', 'O', 'N', 'C', 'C', 'O', 'C', 'S', 'N', 'C', 'C', 'O',
