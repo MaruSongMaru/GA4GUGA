@@ -9,11 +9,11 @@ import itertools
 def permgen(norb: int, iterator: bool = False):
     """
     Generate all permutations of orbitals.
-    
+
     Args:
         norb (int): Number of orbitals.
         iterator (bool): If True, return an iterator; if False, return a list.
-        
+
     Returns:
         iterator or list: All permutations of range(1, norb + 1).
     """
@@ -25,11 +25,11 @@ def permgen(norb: int, iterator: bool = False):
 def expand_perm_multielec(perm: tuple[int], multiplier: int):
     """
     Expand permutation to account for multiple electrons per site.
-    
+
     Args:
         perm (tuple[int]): Original permutation.
         multiplier (int): Number of electrons per site.
-        
+
     Returns:
         tuple[int]: Expanded permutation with multiplier electrons on each site.
 
@@ -43,7 +43,7 @@ def expand_perm_multielec(perm: tuple[int], multiplier: int):
 def convert_perm_rep(perm: tuple[int]) -> tuple[int]:
     """
     Convert a permutation between "orbital representation" and "index representation".
-    
+
     Args:
         perm (tuple[int]): Permutation to convert.
 
@@ -58,25 +58,25 @@ def convert_perm_rep(perm: tuple[int]) -> tuple[int]:
 def convert_fcidump_idx(fcidump_in: str, fcidump_out: str, permutation: tuple[int], orb_rep: bool = True):
     """
     Convert orbital indices in FCIDUMP file according to given permutation.
-    
+
     Args:
         fcidump_in (str): Input FCIDUMP filename.
         fcidump_out (str): Output FCIDUMP filename.
         permutation (tuple[int]): Permutation to apply to orbital indices.
         orb_rep (bool): If True, interpret permutation as "orbital representation";
                        if False, interpret as "index representation". Defaults to True.
-    
+
     Note:
         At the moment, the header is not converted and only the integral part is changed.
 
         Orbital representation: Numbers in permutation represent orbital labels in the given FCIDUMP,
         positions of the numbers represent the indices in FCIDUMP. For example, (4, 1, 2, 3) converts original indices
         {1, 2, 3, 4} to {2, 3, 4, 1}.
-        
+
         Index representation: Numbers in permutation represent indices in the given FCIDUMP,
         positions represent orbitals. The same permutation (4, 1, 2, 3) converts original 
         indices {1, 2, 3, 4} to {4, 1, 2, 3}.
-        
+
     Raises:
         Exception: If permutation length doesn't match number of orbitals in FCIDUMP.
         Exception: If there's an error in processing integral lines.
@@ -88,7 +88,7 @@ def convert_fcidump_idx(fcidump_in: str, fcidump_out: str, permutation: tuple[in
 
     with open(fcidump_out, "w") as f:
         source = iter(open(fcidump_in, "r"))
-        
+
         # Copy the header and take the number of orbitals
         for line in source:
             f.write(line)
@@ -100,7 +100,7 @@ def convert_fcidump_idx(fcidump_in: str, fcidump_out: str, permutation: tuple[in
                                      the number of orbitals of the FCIDUMP.".format(norb))
             if ('/'  in line) or ('END' in line):
                 break
-                
+
         # Convert integral indices
         for line in source:
             x = line.split()[0]
@@ -111,7 +111,7 @@ def convert_fcidump_idx(fcidump_in: str, fcidump_out: str, permutation: tuple[in
                 l = str(permutation.index(int(line.split()[4])))
             except ValueError:
                 raise Exception("Something's wrong in", line)
-                
+
             # Making the output molprolike
             if int(i) < int(j):
                 i, j = j, i
@@ -121,7 +121,7 @@ def convert_fcidump_idx(fcidump_in: str, fcidump_out: str, permutation: tuple[in
                 i, j, k, l = k, l, i, j
 
             new_line = (x, i, j, k, l)
-            
+
             # Just to pritify the output file
             if x[0] == '-':
                 f.write(' ')
@@ -129,5 +129,5 @@ def convert_fcidump_idx(fcidump_in: str, fcidump_out: str, permutation: tuple[in
                 f.write('  ')
             f.write('   '.join(new_line))
             f.write('\n')
-            
+
         source.close()
