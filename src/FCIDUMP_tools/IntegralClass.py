@@ -6,6 +6,7 @@ class FCIDUMPReader:
         self.two_body_integrals: dict[tuple[int, int, int, int], float] = {}  # (i,j,k,l) -> value
         self.orbital_energies: dict[int, float] = {}    # i -> value
         self.core_energy = 0.0
+        self.header_lines = []  # Store header lines for later use
         self.read_file()
         # integral dicts of the natural (original) ordering
         self._one_body_integrals_natural = self.one_body_integrals.copy()
@@ -15,10 +16,16 @@ class FCIDUMPReader:
     def read_file(self):
         """Read the FCIDUMP file and process the integrals."""
         with open(self.filename, 'r') as f:
-            # Skip the header (everything up to and including &END)
             for line in f:
-                line = line.strip()
-                if line.endswith("&END") or line == "/":
+                self.header_lines.append(line)
+                l = line.replace(',', ' ').replace('=', ' ').split()
+                if 'NORB' in line:
+                    self.norb = int(l[l.index('NORB') + 1])
+                if 'NELEC' in line:
+                    self.nelec = int(l[l.index('NELEC') + 1])
+                if 'MS2' in line:
+                    self.ms2 = int(l[l.index('MS2') + 1])
+                if ('/'  in line) or ('END' in line):
                     break
 
             # Process the integral lines
@@ -228,6 +235,32 @@ class FCIDUMPReader:
         print(f"Number of orbital energies: {len(self.orbital_energies)}")
         print(f"Number of one-body integrals: {len(self.one_body_integrals)}")
         print(f"Number of two-body integrals: {len(self.two_body_integrals)}")
+
+    def dump_integrals(self, filename: str, permutation: tuple[int], digits=14):
+        self.permute_integrals(permutation)
+
+        if not self.header_lines:
+            print("No header lines to write.")
+            return
+
+        # For nice output formatting
+        space = lambda value, total_width=22: ' ' * (total_width - len(f"{value:.{digits}f}"))
+
+        with open(filename, 'w') as f:
+            f.writelines(self.header_lines)
+            if self.two_body_integrals:
+                for (i, j, k, l), value in self.two_body_integrals.items():
+                    f.write(f"{space(value)}{value:.{digits}f}    {i}    {j}    {k}    {l}\n")
+
+            if self.one_body_integrals:
+                for (i, j), value in self.one_body_integrals.items():
+                    f.write(f"{space(value)}{value:.{digits}f}    {i}    {j}    0    0\n")
+
+            if self.orbital_energies:
+                for i, value in self.orbital_energies.items():
+                    f.write(f"{space(value)}{value:.{digits}f}    {i}    0    0    0\n")
+
+            f.write(f"{space(self.core_energy)}{self.core_energy:.{digits}f}    0    0    0    0\n")
 
 
 # Example usage
