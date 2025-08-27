@@ -55,7 +55,7 @@ def _min_max_diff_fitness(population, extended_pop, FCIDUMPClass, norb, csf_list
         reduced_fitness[chrom] = max_val - min_val
     return reduced_fitness
 
-def _max_diagelem(population, extended_pop, FCIDUMPClass, s, nel, norb, csf_list):
+def _max_diagelem(population, extended_pop, FCIDUMPClass, norb, csf_list):
     """
     Internal function that calculates fitness based the max diagonal element
     using csf_list.
@@ -71,7 +71,7 @@ def _max_diagelem(population, extended_pop, FCIDUMPClass, s, nel, norb, csf_list
         reduced_fitness[chrom] = max_val
     return reduced_fitness
 
-def _min_diagelem(population, extended_pop, FCIDUMPClass, s, nel, norb, csf_list):
+def _min_diagelem(population, extended_pop, FCIDUMPClass, norb, csf_list):
     """
     Internal function that calculates fitness based the min diagonal element
     using csf_list.
@@ -271,7 +271,7 @@ def X_matrix_openshell_only(d_vec):
     return X
 #------------------------------------------------------------------------------#
 
-def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, s, nel, norb, **kwargs):
+def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, norb, **kwargs):
     """
     Wrapper function to calculate fitness using specified method.
 
@@ -279,8 +279,6 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, s, nel, n
         method (FitnessFunction): The method to use for fitness score evaluation
         POPClass: Population class instance
         FCIDUMPClass: FCIDUMP class instance
-        s: Spin
-        nel: Number of electrons
         norb: Number of orbitals
         **kwargs: Optional arguments depending on method:
             - For MIN_MAX_DIFF: 
@@ -320,9 +318,9 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, s, nel, n
     elif method == FitnessFunction.DIAG_ELEM_SMS_MAPPING:
         fitness_ht =  _diag_elem_sms_mapping(POPClass.current_pop, extended_pop, sms_mapping_dict, FCIDUMPClass, norb, tMinimize)
     elif method == FitnessFunction.MAX_DIAG_ELEM:
-        fitness_ht = _max_diagelem(POPClass.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
+        fitness_ht = _max_diagelem(POPClass.current_pop, extended_pop, FCIDUMPClass, norb, csf_list)
     elif method == FitnessFunction.MIN_DIAG_ELEM:
-        fitness_ht = _min_diagelem(POPClass.current_pop, extended_pop, FCIDUMPClass, s, nel, norb, csf_list)
+        fitness_ht = _min_diagelem(POPClass.current_pop, extended_pop, FCIDUMPClass, norb, csf_list)
     elif method == FitnessFunction.NEEL_FAST_DIAG:
         if J is None:
             raise ValueError("J matrix is required for NEEL_FAST_DIAG method")

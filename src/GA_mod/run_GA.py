@@ -8,11 +8,11 @@ from FCIDUMP_tools import IntegralClass
 import subprocess
 
 def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size,
-               mutation_rates, generations, co_function, fcidump, s, nel, norb,
+               mutation_rates, generations, co_function, fcidump, norb,
                restart_filename=None, **kwargs):
     """
     restricted_ordering_len is the length of a "restricted" ordering and the GA
-    is performed on chromosomes with this length. But fcidump, s, nel, and norb
+    is performed on chromosomes with this length. But fcidump, and norb
     are for the full ordering.
     """
 
@@ -39,6 +39,9 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
         log_file.write("- Fitness function: {}\n".format(fitness_function))
         log_file.write("- Clustering period: {}\n".format(cluster_period))
         log_file.write("- Stagnation limit: {}\n".format(stagnation_limit))
+        if sms_ref_csf is not None and sms_ref_ordering is not None:
+            log_file.write("- S-Ms mapping reference CSF: {}\n".format(sms_ref_csf))
+            log_file.write("- S-Ms mapping reference ordering: {}\n".format(sms_ref_ordering))
         log_file.write("\n")
 
     POPClass = pop.Population(num_chroms, restricted_ordering_len, elite_size,
@@ -55,12 +58,12 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
     # 0th generation
     reduced_fitness_dict = \
         measure_fitness.calculate_fitness(fitness_function, POPClass, FCIDUMPClass,
-                                          s, nel, norb, **kwargs)
+                                          norb, **kwargs)
     bestchrom = max(reduced_fitness_dict, key=reduced_fitness_dict.get)
 
     best_fitness = reduced_fitness_dict[bestchrom]
     with open(log_file_name, 'a') as log_file:
-        log_file.write("# generation  chromosome  fitness\n")
+        log_file.write("# Generation  Ordering  Fitness\n")
         log_file.write("0  {}  {}\n".format(bestchrom, best_fitness))
 
     # Subsequent generations
@@ -76,7 +79,7 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
 
         reduced_fitness_dict = \
             measure_fitness.calculate_fitness(fitness_function, POPClass,
-                                              FCIDUMPClass, s, nel, norb,
+                                              FCIDUMPClass, norb,
                                               **kwargs)
         bestchrom = max(reduced_fitness_dict, key=reduced_fitness_dict.get)
         best_fitness = reduced_fitness_dict[bestchrom]
@@ -99,6 +102,9 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
             log_file.write(f"# Chromosomes in the {i}th generation and their fitnesses\n")
             for chrom in POPClass.current_pop:
                 log_file.write(f"{chrom} {reduced_fitness_dict[chrom]}\n")
+
+    # Generate an FCIDUMP file with the best ordering.
+    FCIDUMPClass.dump_integrals('FCIDUMP_bestordering', bestchrom)
 
 
 #------------------------------------------------------------------------------#
