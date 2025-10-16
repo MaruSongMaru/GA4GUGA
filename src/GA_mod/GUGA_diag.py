@@ -18,10 +18,12 @@ class DiagElement:
         self.v_ijji = np.array([[IntegralClass.get_integral(i, j, j, i) for j in range(1, self.norb + 1)] for i in range(1, self.norb + 1)])
 
     def stepvec_to_occ(self, CSF_stepvec: np.array) -> np.array:
-        CSF_stepvec = np.asarray(CSF_stepvec)
         return CSF_stepvec - (CSF_stepvec // 2)
 
     def calc_diag_elem(self, CSF_stepvec: np.array, add_core=True) -> float:
+        CSF_stepvec = np.asarray(CSF_stepvec)
+        if CSF_stepvec.ndim != 1:
+            raise ValueError(f"CSF_stepvec must be a 1D array, got shape {CSF_stepvec.shape}")
         CSF_occ = self.stepvec_to_occ(CSF_stepvec)
         one_body = self.one_body_contrib(CSF_occ)
         two_body = self.two_body_contrib(CSF_stepvec, CSF_occ)
