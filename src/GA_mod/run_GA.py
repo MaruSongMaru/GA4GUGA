@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+import os
 from GA_mod import population as pop
 from GA_mod import process_df
 from GA_mod import sampling
@@ -14,35 +16,42 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
     restricted_ordering_len is the length of a "restricted" ordering and the GA
     is performed on chromosomes with this length. But fcidump, and norb
     are for the full ordering.
+    
+    Output is written to stdout and can be redirected: python script.py > output.log
+    
+    Checkpoint feature: Create a file named by 'checkpoint_trigger' (default: 'WRITE_CHECKPOINT')
+    during the GA run to trigger writing an FCIDUMP with the current best ordering.
+    The trigger file will be deleted after the checkpoint is written.
     """
 
-    log_file_name = kwargs.get('log_file_name', 'progress.log')
     pop_filename = kwargs.get('pop_file_name', 'current_pop.log')
+    checkpoint_trigger = kwargs.get('checkpoint_trigger', 'WRITE_CHECKPOINT')
+    checkpoint_prefix = kwargs.get('checkpoint_prefix', 'FCIDUMP_checkpoint')
     git_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
     sms_ref_csf = kwargs.get('sms_ref_csf', None)
     sms_ref_ordering = kwargs.get('sms_ref_ordering', None)
     cluster_period = kwargs.get('cluster_period', 5)
     stagnation_limit = kwargs.get('stagnation_limit', max(100, generations // 100))
 
-    with open(log_file_name, 'w') as log_file:
-        log_file.write("Genetic Algoritm simulation started\n")
-        log_file.write("GIT hash: {}\n".format(git_hash))
-        log_file.write("\n")
-        if restart_filename is not None:
-            log_file.write("Restarting from population file: {}\n\n"
-                           .format(restart_filename))
-        log_file.write("- Number of chromosomes: {}\n".format(num_chroms))
-        log_file.write("- Elite size: {}\n".format(elite_size))
-        log_file.write("- Mutation rates: {}\n".format(mutation_rates))
-        log_file.write("- Generations: {}\n".format(generations))
-        log_file.write("- Crossover function: {}\n".format(co_function.__name__))
-        log_file.write("- Fitness function: {}\n".format(fitness_function))
-        log_file.write("- Clustering period: {}\n".format(cluster_period))
-        log_file.write("- Stagnation limit: {}\n".format(stagnation_limit))
-        if sms_ref_csf is not None and sms_ref_ordering is not None:
-            log_file.write("- S-Ms mapping reference CSF: {}\n".format(sms_ref_csf))
-            log_file.write("- S-Ms mapping reference ordering: {}\n".format(sms_ref_ordering))
-        log_file.write("\n")
+    print("Genetic Algoritm simulation started", file=sys.stdout)
+    print(f"GIT hash: {git_hash}", file=sys.stdout)
+    print("", file=sys.stdout)
+    if restart_filename is not None:
+        print(f"Restarting from population file: {restart_filename}\n", file=sys.stdout)
+    print(f"- Number of chromosomes: {num_chroms}", file=sys.stdout)
+    print(f"- Elite size: {elite_size}", file=sys.stdout)
+    print(f"- Mutation rates: {mutation_rates}", file=sys.stdout)
+    print(f"- Generations: {generations}", file=sys.stdout)
+    print(f"- Crossover function: {co_function.__name__}", file=sys.stdout)
+    print(f"- Fitness function: {fitness_function}", file=sys.stdout)
+    print(f"- Clustering period: {cluster_period}", file=sys.stdout)
+    print(f"- Stagnation limit: {stagnation_limit}", file=sys.stdout)
+    if sms_ref_csf is not None and sms_ref_ordering is not None:
+        print(f"- S-Ms mapping reference CSF: {sms_ref_csf}", file=sys.stdout)
+        print(f"- S-Ms mapping reference ordering: {sms_ref_ordering}", file=sys.stdout)
+    print("", file=sys.stdout)
+    print(f"Checkpoint trigger: Create file '{checkpoint_trigger}' to write current best ordering", file=sys.stdout)
+    print("", file=sys.stdout)
 
     POPClass = pop.Population(num_chroms, restricted_ordering_len, elite_size,
                                sms_ref_csf, sms_ref_ordering,
@@ -62,9 +71,8 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
     bestchrom = max(reduced_fitness_dict, key=reduced_fitness_dict.get)
 
     best_fitness = reduced_fitness_dict[bestchrom]
-    with open(log_file_name, 'a') as log_file:
-        log_file.write("# Generation  Ordering  Fitness\n")
-        log_file.write("0  {}  {}\n".format(bestchrom, best_fitness))
+    print("# Generation  Ordering  Fitness", file=sys.stdout)
+    print(f"0  {bestchrom}  {best_fitness}", file=sys.stdout)
 
     # Subsequent generations
     for i in range(1, generations + 1):
@@ -89,14 +97,24 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
             if stagnation_counter == stagnation_limit:
                 mutation_rate_index = (mutation_rate_index + 1) % len(mutation_rates)
                 current_mutation_rate = mutation_rates[mutation_rate_index]
-                with open(log_file_name, 'a') as log_file:
-                    log_file.write("# Stagnation detected. Change mutation rate to {}\n".format(current_mutation_rate))
+                print(f"# Stagnation detected. Change mutation rate to {current_mutation_rate}", file=sys.stdout)
                 stagnation_counter = 0
         else:
             stagnation_counter = 0
 
-        with open(log_file_name, 'a') as log_file:
-            log_file.write("{}  {}  {}\n".format(i, bestchrom, best_fitness))
+        print(f"{i}  {bestchrom}  {best_fitness}", file=sys.stdout)
+
+        # Check for checkpoint trigger file
+        if os.path.exists(checkpoint_trigger):
+            checkpoint_filename = f"{checkpoint_prefix}_gen{i}"
+            print(f"\n# Checkpoint trigger detected at generation {i}", file=sys.stdout)
+            print(f"# Writing FCIDUMP with current best ordering to '{checkpoint_filename}'", file=sys.stdout)
+            FCIDUMPClass.dump_integrals(checkpoint_filename, bestchrom)
+            print(f"# Checkpoint written. Removing trigger file and continuing...\n", file=sys.stdout)
+            try:
+                os.remove(checkpoint_trigger)
+            except OSError as e:
+                print(f"# Warning: Could not remove trigger file: {e}", file=sys.stdout)
 
         with open(pop_filename, 'w') as log_file:
             log_file.write(f"# Chromosomes in the {i}th generation and their fitnesses\n")
@@ -104,6 +122,9 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
                 log_file.write(f"{chrom} {reduced_fitness_dict[chrom]}\n")
 
     # Generate an FCIDUMP file with the best ordering.
+    print("\n\nGenetic Algorithm simulation completed.", file=sys.stdout)
+    print(f"Best ordering found: {bestchrom}", file=sys.stdout)
+    print("Writing reordered FCIDUMP to 'FCIDUMP_bestordering'", file=sys.stdout)
     FCIDUMPClass.dump_integrals('FCIDUMP_bestordering', bestchrom)
 
 
