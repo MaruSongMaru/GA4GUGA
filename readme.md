@@ -1,6 +1,7 @@
 # GA4GUGA
 
-A genetic algorithm designed to find an optimal ordering for a compact wave function representation in GUGA bases.
+A genetic algorithm (GA) designed to find an optimal ordering for a compact wave function representation in GUGA bases.
+The code reads in an FCIDUMP file, perform a GA simulation using diagonal element information (see Section 3 of Reference [1] for details of available fitness functions), and creates a reordered FCIDUMP file using the best ordering found from the simulation.
 
 ## Installation
 
@@ -38,6 +39,15 @@ fitness = run_GA.perform_GA(
 )
 ```
 
+### Checkpoint feature
+
+```bash
+touch WRITE_CHECKPOINT
+```
+
+creates a trigger file during a run to create an FCIDUMP file with the current best ordering.
+
+
 See `examples/` directory for complete working examples.
 
 ### Input options
@@ -60,21 +70,9 @@ If `norb = 10`, `num_prefix = 2`, `num_suffix = 2`, `restricted_ordering_len = 3
 E.g., (1,2,5,6,4,3,8,7,9,10).
 work in progress..
 
-### Checkpoint feature
-
-```bash
-touch WRITE_CHECKPOINT
-```
-
-creates a trigger file during a run to create an FCIDUMP file with the current best ordering.
-
 
 ## Citation
 
 If you cite this package, please cite:
 
 [1] M. Song and G. Li Manni, A Genetic Algorithm Approach for Compact Wave Function Representations in Spin-Adapted Bases, J. Chem. Theory Comput. **XXX**, XXXX (2025), DOI: [10.1021/acs.jctc.5c01264](https://doi.org/10.1021/acs.jctc.5c01264)
-
-## License
-
-MIT License
