@@ -6,6 +6,7 @@ from GA_mod import process_df
 from GA_mod import sampling
 from GA_mod import measure_fitness
 from GA_mod import crossover as co
+from GA_mod import extend_ordering
 from FCIDUMP_tools import IntegralClass
 import subprocess
 
@@ -81,7 +82,9 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
 
     best_fitness = reduced_fitness_dict[bestchrom]
     print("# Generation  Ordering  Fitness", file=sys.stdout)
-    print(f"0  {bestchrom}  {best_fitness}", file=sys.stdout)
+    extended_bestchrom = extend_ordering.extend_ordering(bestchrom, 
+        on_site_permutation, num_prefix, num_suffix)
+    print(f"0  {extended_bestchrom}  {best_fitness}", file=sys.stdout)
 
     # Subsequent generations
     for i in range(1, generations + 1):
@@ -112,7 +115,9 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
         else:
             stagnation_counter = 0
 
-        print(f"{i}  {bestchrom}  {best_fitness}", file=sys.stdout)
+        extended_bestchrom = extend_ordering.extend_ordering(bestchrom, 
+            on_site_permutation, num_prefix, num_suffix)
+        print(f"{i}  {extended_bestchrom}  {best_fitness}", file=sys.stdout)
 
         # Check for checkpoint trigger file
         if os.path.exists(checkpoint_trigger):
@@ -129,7 +134,9 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
         with open(pop_filename, 'w') as log_file:
             log_file.write(f"# Chromosomes in the {i}th generation and their fitnesses\n")
             for chrom in POPClass.current_pop:
-                log_file.write(f"{chrom} {reduced_fitness_dict[chrom]}\n")
+                extended_chrom = extend_ordering.extend_ordering(chrom, 
+                    on_site_permutation, num_prefix, num_suffix)
+                log_file.write(f"{extended_chrom} {reduced_fitness_dict[chrom]}\n")
 
     # Generate an FCIDUMP file with the best ordering.
     print("\n\nGenetic Algorithm simulation completed.", file=sys.stdout)

@@ -297,10 +297,6 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, norb,
     csf_list = kwargs.get('csf_list', None)
     tMinimize = kwargs.get('tMinimize', False)
     J = kwargs.get('J', None)
-    if on_site_permutation is None and (num_prefix != 0 or num_suffix != 0):
-        raise ValueError("on_site_permutation is required for num_prefix and"
-        " num_suffix. Use (1,) for on_site_permutation if no permutation is "
-        "needed.")
 
     if on_site_permutation is not None:
         extended_pop = [extend_ordering.extend_ordering(ordering, 
