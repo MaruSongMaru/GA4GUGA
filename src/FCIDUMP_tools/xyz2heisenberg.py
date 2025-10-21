@@ -5,7 +5,6 @@ The Heisenberg Js are inversely proportional to the distance between the atoms.
 Copyright (c) 2025 Maru Song
 """
 
-from FCIDUMP_tools import write_fcidump
 import numpy as np
 from itertools import combinations
 from typing import Optional
@@ -127,7 +126,7 @@ def gen_heisenberg_fcidump(xyzfile: str, fcidumpname: str, nel: int, norb: int, 
         diag = J / 2.0
         integral_list.append([diag, j, j, i, i])
         integral_list.append([J, j, i, i, j])
-    write_fcidump.main(fcidumpname, nel, norb, ms, integral_list)
+    return integral_list
 
 
 if __name__ == '__main__':
