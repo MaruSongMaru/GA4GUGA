@@ -7,6 +7,7 @@ from FCIDUMP_tools import IntegralClass
 from enum import Enum, auto
 from GA_mod import extend_ordering
 from GA_mod import GUGA_diag
+from GA_mod import config
 import numpy as np
 
 class FitnessFunction(Enum):
@@ -272,7 +273,7 @@ def X_matrix_openshell_only(d_vec):
 #------------------------------------------------------------------------------#
 
 def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, norb, 
-                      on_site_permutation, num_prefix, num_suffix, **kwargs):
+                      tExtendChrom, **kwargs):
     """
     Wrapper function to calculate fitness using specified method.
 
@@ -281,6 +282,7 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, norb,
         POPClass: Population class instance
         FCIDUMPClass: FCIDUMP class instance
         norb: Number of orbitals
+        tExtendChrom: Whether to extend chromosomes using ordering parameters
         **kwargs: Optional arguments depending on method:
             - For MIN_MAX_DIFF: 
                 csf_list (list): List of CSFs to measure
@@ -298,9 +300,9 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, norb,
     tMinimize = kwargs.get('tMinimize', False)
     J = kwargs.get('J', None)
 
-    if on_site_permutation is not None:
+    if tExtendChrom:
         extended_pop = [extend_ordering.extend_ordering(ordering, 
-            on_site_permutation, num_prefix, num_suffix) 
+            config.on_site_permutation, config.num_prefix, config.num_suffix) 
             for ordering in POPClass.current_pop]
     else:
         extended_pop = POPClass.current_pop

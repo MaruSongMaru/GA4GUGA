@@ -1,11 +1,14 @@
 import random
+from GA_mod import config
+from GA_mod import extend_ordering
 
 class Population:
-    def __init__(self, num_chroms, ordering_len, elite_size, sms_ref_csf=None,
-                 sms_ref_ordering=None, restart_filename=None):
+    def __init__(self, num_chroms, ordering_len, elite_size, tExtendChrom,
+                 sms_ref_csf=None, sms_ref_ordering=None, restart_filename=None):
         self.num_chroms = num_chroms
         self.ordering_len = ordering_len
         self.elite_size = elite_size
+        self.tExtendChrom = tExtendChrom
         # sms_ref_csf assumes the stepvector notation
         self.sms_mapping_enabled = sms_ref_csf is not None and sms_ref_ordering is not None
         if self.sms_mapping_enabled:
@@ -25,7 +28,7 @@ class Population:
         while len(population) < self.num_chroms:
             chrom = tuple(random.sample(range(1, self.ordering_len + 1),
                                         self.ordering_len))
-            if ((self.sms_mapping_enabled and is_csf_valid(chrom, self.sms_mapping_dict))
+            if ((self.sms_mapping_enabled and is_csf_valid(chrom, self.sms_mapping_dict, self.tExtendChrom))
                 or not self.sms_mapping_enabled):
                 population.append(chrom)
 
@@ -44,67 +47,12 @@ class Population:
 
                     # prevent invalid CSF
                     if self.sms_mapping_enabled:
-                        while not is_csf_valid(mutated_chrom, self.sms_mapping_dict):
+                        while not is_csf_valid(mutated_chrom, self.sms_mapping_dict, self.tExtendChrom):
                             mutated_chrom = list(self.current_pop[i])
                             gene2 = random.sample(range(0, self.ordering_len), 1)[0]
                             mutated_chrom[gene1], mutated_chrom[gene2]\
                           = mutated_chrom[gene2], mutated_chrom[gene1]
                     self.current_pop[i] = tuple(mutated_chrom)
-
-# -------------------- Cluster mutation --------------------------------------#
-#        for i in range(self.elite_size, self.num_chroms):
-#            chrom = list(self.current_pop[i])
-#
-#            num_clusters = random.randint(2,self.ordering_len)
-#
-#            breakpoints = [0]
-#            breakpoints.extend(sorted(random.sample(range(1, self.ordering_len), num_clusters - 1)))
-#            breakpoints.append(self.ordering_len)
-#
-#            result = []
-#            clusters = []
-#
-#            for j in range(len(breakpoints) - 1):
-#                start, end = breakpoints[j], breakpoints[j + 1]
-#
-#                cluster = chrom[start:end]
-#                if random.random() < 0.10:
-#                    cluster = cluster[::-1]
-#                clusters.append(cluster)
-#
-#            for cluster_idx1 in range(len(clusters)):
-#                if random.random() < mutation_rate:
-#                    cluster_idx2 = random.sample(range(len(clusters)), 1)[0]
-#                    clusters[cluster_idx1], clusters[cluster_idx2]\
-#                  = clusters[cluster_idx2], clusters[cluster_idx1]
-#                    
-#            for cluster in clusters:
-#                result.extend(cluster)
-#
-#            if self.sms_mapping_enabled:
-#                while not is_csf_valid(tuple(result), self.sms_mapping_dict):
-#                    result = []
-#                    clusters = []
-#
-#                    for j in range(len(breakpoints) - 1):
-#                        start, end = breakpoints[j], breakpoints[j + 1]
-#
-#                        cluster = chrom[start:end]
-#                        if random.random() < 0.10:
-#                            cluster = cluster[::-1]
-#                        clusters.append(cluster)
-#
-#                    for cluster_idx1 in range(len(clusters)):
-#                        if random.random() < mutation_rate:
-#                            cluster_idx2 = random.sample(range(len(clusters)), 1)[0]
-#                            clusters[cluster_idx1], clusters[cluster_idx2]\
-#                          = clusters[cluster_idx2], clusters[cluster_idx1]
-#                            
-#                    for cluster in clusters:
-#                        result.extend(cluster)
-#
-#            self.current_pop[i] = tuple(result)
-# ----------------------------------------------------------------------------#
 
     def get_elite_chromosomes(self, reduced_fitness):
         """
@@ -157,17 +105,15 @@ class Population:
             while crossover_counter < max_attempts:
                 offspring = crossover_function(pool[i], pool[len(pool)-i-1])
                 if ((self.sms_mapping_enabled
-                     and is_csf_valid(offspring, self.sms_mapping_dict))
+                     and is_csf_valid(offspring, self.sms_mapping_dict, self.tExtendChrom))
                     or not self.sms_mapping_enabled):
                     offsprings.append(tuple(offspring))
                     break
                 crossover_counter += 1
             if crossover_counter == max_attempts:
-#                print('Crossover failed after {} attempts'.format(max_attempts))
-#                print('Create a new offspring randomly')
                 offspring = random.sample(range(1, self.ordering_len + 1),
                                           self.ordering_len)
-                while not is_csf_valid(offspring, self.sms_mapping_dict):
+                while not is_csf_valid(offspring, self.sms_mapping_dict, self.tExtendChrom):
                     offspring = random.sample(range(1, self.ordering_len + 1),
                                               self.ordering_len)
                 offsprings.append(tuple(offspring))
@@ -208,7 +154,7 @@ class Population:
                 if len(chromosome) != self.ordering_len:
                     raise ValueError(f"Chromosome length {len(chromosome)} "
                                      f"doesn't match expected length {self.ordering_len}")
-                if self.sms_mapping_enabled and not is_csf_valid(chromosome, self.sms_mapping_dict):
+                if self.sms_mapping_enabled and not is_csf_valid(chromosome, self.sms_mapping_dict, self.tExtendChrom):
                     raise ValueError(f"Chromosome {chromosome} is not CSF compatible")
                     
                 chromosomes.append(chromosome)
@@ -222,9 +168,19 @@ class Population:
 
 #-------------------------------------------------------------------------------
 
-def is_csf_valid(ordering, sms_mapping_dict):
+def is_csf_valid(ordering, sms_mapping_dict, tExtendChrom):
+    if tExtendChrom:
+        new_ordering = extend_ordering.extend_ordering(
+            ordering, 
+            config.on_site_permutation, 
+            config.num_prefix, 
+            config.num_suffix
+        )
+    else:
+        new_ordering = ordering
+
     cumul_spin = 0
-    for i in ordering:
+    for i in new_ordering:
         if sms_mapping_dict[i] == 1:
             cumul_spin += 1
         elif sms_mapping_dict[i] == 2:

@@ -7,6 +7,7 @@ from GA_mod import sampling
 from GA_mod import measure_fitness
 from GA_mod import crossover as co
 from GA_mod import extend_ordering
+from GA_mod import config
 from FCIDUMP_tools import IntegralClass
 import subprocess
 
@@ -26,12 +27,21 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
     The trigger file will be deleted after the checkpoint is written.
     """
 
+
     expected_norb = num_prefix + num_suffix + restricted_ordering_len * len(on_site_permutation)
-    if expected_norb != int(norb):
+    if expected_norb != norb:
         raise ValueError(
             "Inconsistent norb: num_prefix + num_suffix + restricted_ordering_len * len(on_site_permutation) "
             f"= {expected_norb}, but norb = {norb}"
         )
+    if norb == restricted_ordering_len:
+        tExtendChrom = False
+    else:
+        tExtendChrom = True
+
+    # Set global ordering parameters for use in other modules
+    # TODO: set other variables as global as well.
+    config.set_ordering_params(on_site_permutation, num_prefix, num_suffix)
 
     pop_filename = kwargs.get('pop_file_name', 'current_pop.log')
     checkpoint_trigger = kwargs.get('checkpoint_trigger', 'WRITE_CHECKPOINT')
@@ -63,7 +73,7 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
     print("", file=sys.stdout)
 
     POPClass = pop.Population(num_chroms, restricted_ordering_len, elite_size,
-                               sms_ref_csf, sms_ref_ordering,
+                               tExtendChrom, sms_ref_csf, sms_ref_ordering,
                                restart_filename=restart_filename)
 
     FCIDUMPClass = IntegralClass.FCIDUMPReader(fcidump)
@@ -76,8 +86,8 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
     # 0th generation
     reduced_fitness_dict = \
         measure_fitness.calculate_fitness(fitness_function, POPClass, FCIDUMPClass,
-                                          norb, on_site_permutation, num_prefix,
-                                          num_suffix, **kwargs)
+                                          norb, tExtendChrom=tExtendChrom,
+                                          **kwargs)
     bestchrom = max(reduced_fitness_dict, key=reduced_fitness_dict.get)
 
     best_fitness = reduced_fitness_dict[bestchrom]
@@ -99,9 +109,9 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
 
         reduced_fitness_dict = \
             measure_fitness.calculate_fitness(fitness_function, POPClass,
-                                              FCIDUMPClass, norb, 
-                                              on_site_permutation, num_prefix,
-                                              num_suffix, **kwargs)
+                                              FCIDUMPClass, norb,
+                                              tExtendChrom=tExtendChrom,
+                                              **kwargs)
         bestchrom = max(reduced_fitness_dict, key=reduced_fitness_dict.get)
         best_fitness = reduced_fitness_dict[bestchrom]
 
@@ -143,64 +153,3 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
     print(f"Best ordering found: {bestchrom}", file=sys.stdout)
     print("Writing reordered FCIDUMP to 'FCIDUMP_bestordering'", file=sys.stdout)
     FCIDUMPClass.dump_integrals('FCIDUMP_bestordering', bestchrom)
-
-
-#------------------------------------------------------------------------------#
-def perform_GA_test_use_df(num_chroms, ordering_len, elite_size, mutation_rates,
-                          generations, co_function, fitness_dict,
-                          reference_dict, **kwargs):
-    """
-    Function to perform the Genetic Algorithm test where the full data is provided.
- 
-    - reference_dict: Dictionary that contains the reference values to be used
-                      check the target fitness (fitness_dict) is a good metric.
-                      Mostly L4Norm is used as reference.
-    """
-    POPClass = pop.Population(num_chroms, ordering_len, elite_size)
-    fitness = np.zeros(generations + 1)
-    reference_fitness = np.zeros(generations + 1)
-    cluster_period = kwargs.get('cluster_period', 5)
- 
-    # 0th generation
-    reduced_fitness_dict = \
-        process_df.gen_pop_fitness_ht(POPClass.current_pop, fitness_dict)
-    fitness[0] = max(reduced_fitness_dict.values())
- 
-    reduced_reference_dict = \
-        process_df.gen_pop_fitness_ht(POPClass.current_pop, reference_dict)
-    reference_fitness[0] = max(reduced_reference_dict.values())
- 
-    # Subsequent generations
-    for i in range(1, generations + 1):
-        if i % cluster_period == 0:
-            _co_function = co.shuffle_cluster
-        else:
-            _co_function = co_function
-        POPClass.next_generation(reduced_fitness_dict, _co_function,
-                                  sampling.roullette_wheel_sampling,
-                                  mutation_rates)
- 
-        reduced_fitness_dict = \
-            process_df.gen_pop_fitness_ht(POPClass.current_pop, fitness_dict)
-        fitness[i] = max(reduced_fitness_dict.values())
- 
-        reduced_reference_dict = \
-            process_df.gen_pop_fitness_ht(POPClass.current_pop, reference_dict)
-        reference_fitness[i] = max(reduced_reference_dict.values())
- 
-    return fitness, reference_fitness
-
-def GA_ensembles_read_df(num_ensembles, pop_size, restricted_ordering_len,
-                         elite_size, mutation_rates, generations, co_function,
-                         fitness_dict, reference_dict, **kwargs):
-
-    fitness_ensemble_array = np.zeros((num_ensembles, generations + 1))
-    reference_ensemble_array = np.zeros((num_ensembles, generations + 1))
-
-    for ensemble in range(num_ensembles):
-        fitness_ensemble_array[ensemble], reference_ensemble_array[ensemble] = \
-            perform_GA_test_use_df(pop_size, restricted_ordering_len, elite_size,
-                                   mutation_rates, generations, co_function,
-                                   fitness_dict, reference_dict, **kwargs)
-
-    return fitness_ensemble_array, reference_ensemble_array
