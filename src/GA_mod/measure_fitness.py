@@ -271,7 +271,8 @@ def X_matrix_openshell_only(d_vec):
     return X
 #------------------------------------------------------------------------------#
 
-def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, norb, **kwargs):
+def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, norb, 
+                      on_site_permutation, num_prefix, num_suffix, **kwargs):
     """
     Wrapper function to calculate fitness using specified method.
 
@@ -292,9 +293,6 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, norb, **k
     Raises:
         ValueError: If required parameters are missing for chosen method
     """
-    on_site_permutation = kwargs.get('on_site_permutation', None)
-    num_prefix = kwargs.get('num_prefix', 0)
-    num_suffix = kwargs.get('num_suffix', 0)
     sms_mapping_dict = POPClass.sms_mapping_dict
     csf_list = kwargs.get('csf_list', None)
     tMinimize = kwargs.get('tMinimize', False)

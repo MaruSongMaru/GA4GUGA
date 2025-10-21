@@ -9,8 +9,9 @@ from GA_mod import crossover as co
 from FCIDUMP_tools import IntegralClass
 import subprocess
 
-def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size,
-               mutation_rates, generations, co_function, fcidump, norb,
+def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates, 
+               restricted_ordering_len, generations, co_function, fcidump, norb,
+               on_site_permutation=(1,), num_prefix=0, num_suffix=0, 
                restart_filename=None, **kwargs):
     """
     restricted_ordering_len is the length of a "restricted" ordering and the GA
@@ -23,6 +24,13 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
     during the GA run to trigger writing an FCIDUMP with the current best ordering.
     The trigger file will be deleted after the checkpoint is written.
     """
+
+    expected_norb = num_prefix + num_suffix + restricted_ordering_len * len(on_site_permutation)
+    if expected_norb != int(norb):
+        raise ValueError(
+            "Inconsistent norb: num_prefix + num_suffix + restricted_ordering_len * len(on_site_permutation) "
+            f"= {expected_norb}, but norb = {norb}"
+        )
 
     pop_filename = kwargs.get('pop_file_name', 'current_pop.log')
     checkpoint_trigger = kwargs.get('checkpoint_trigger', 'WRITE_CHECKPOINT')
@@ -67,7 +75,8 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
     # 0th generation
     reduced_fitness_dict = \
         measure_fitness.calculate_fitness(fitness_function, POPClass, FCIDUMPClass,
-                                          norb, **kwargs)
+                                          norb, on_site_permutation, num_prefix,
+                                          num_suffix, **kwargs)
     bestchrom = max(reduced_fitness_dict, key=reduced_fitness_dict.get)
 
     best_fitness = reduced_fitness_dict[bestchrom]
@@ -87,8 +96,9 @@ def perform_GA(fitness_function, num_chroms, restricted_ordering_len, elite_size
 
         reduced_fitness_dict = \
             measure_fitness.calculate_fitness(fitness_function, POPClass,
-                                              FCIDUMPClass, norb,
-                                              **kwargs)
+                                              FCIDUMPClass, norb, 
+                                              on_site_permutation, num_prefix,
+                                              num_suffix, **kwargs)
         bestchrom = max(reduced_fitness_dict, key=reduced_fitness_dict.get)
         best_fitness = reduced_fitness_dict[bestchrom]
 
