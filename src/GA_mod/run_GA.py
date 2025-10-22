@@ -134,7 +134,7 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
             checkpoint_filename = f"{checkpoint_prefix}_gen{i}"
             print(f"\n# Checkpoint trigger detected at generation {i}", file=sys.stdout)
             print(f"# Writing FCIDUMP with current best ordering to '{checkpoint_filename}'", file=sys.stdout)
-            FCIDUMPClass.dump_integrals(checkpoint_filename, bestchrom)
+            FCIDUMPClass.dump_integrals(checkpoint_filename, extended_bestchrom)
             print(f"# Checkpoint written. Removing trigger file and continuing...\n", file=sys.stdout)
             try:
                 os.remove(checkpoint_trigger)
@@ -150,6 +150,7 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
 
     # Generate an FCIDUMP file with the best ordering.
     print("\n\nGenetic Algorithm simulation completed.", file=sys.stdout)
-    print(f"Best ordering found: {bestchrom}", file=sys.stdout)
+    print(f"Best ordering found: {extended_bestchrom}", file=sys.stdout)
     print("Writing reordered FCIDUMP to 'FCIDUMP_bestordering'", file=sys.stdout)
-    FCIDUMPClass.dump_integrals('FCIDUMP_bestordering', bestchrom)
+    FCIDUMPClass.dump_integrals('FCIDUMP_bestordering', extended_bestchrom)
+
