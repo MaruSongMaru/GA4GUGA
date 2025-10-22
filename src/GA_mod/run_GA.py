@@ -1,8 +1,6 @@
-import numpy as np
 import sys
 import os
 from GA_mod import population as pop
-from GA_mod import process_df
 from GA_mod import sampling
 from GA_mod import measure_fitness
 from GA_mod import crossover as co
@@ -17,15 +15,7 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
                on_site_permutation=(1,), num_prefix=0, num_suffix=0, 
                restart_filename=None, **kwargs):
     """
-    restricted_ordering_len is the length of a "restricted" ordering and the GA
-    is performed on chromosomes with this length. But fcidump, and norb
-    are for the full ordering.
-    
-    Output is written to stdout and can be redirected: python script.py > output.log
-    
-    Checkpoint feature: Create a file named by 'checkpoint_trigger' (default: 'WRITE_CHECKPOINT')
-    during the GA run to trigger writing an FCIDUMP with the current best ordering.
-    The trigger file will be deleted after the checkpoint is written.
+    Main function to perform Genetic Algorithm optimization.
     """
 
 
@@ -155,4 +145,3 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
     print(f"Best ordering found: {extended_bestchrom}", file=sys.stdout)
     print("Writing reordered FCIDUMP to 'FCIDUMP_bestordering'", file=sys.stdout)
     FCIDUMPClass.dump_integrals('FCIDUMP_bestordering', extended_bestchrom)
-
