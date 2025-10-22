@@ -3,9 +3,10 @@ Perform a GA simulation with the S-Ms mapping for a 20-site Heisenberg chain.
 `ref_csf` defines the S-Ms consistent CSF for `ref_ordering`.
 Therefore, the S-Ms mappling {site:coupling} is {1:1, 2:2, 3:1, 4:2, ..., 19:1, 20:2}.
 
-`FAST_DIAG_MIN_OSONL` "minimizes" the (S-MS consistent) CSF energy.
+`FAST_DIAG_MIN_OSONL` "minimizes" the (S-MS consistent) CSF energy using only
+ordering dependent terms for open-shell orbitals (1 and 2).
 This fitness function only works with Heisenberg Hamiltonians, as it minimizes
-the CSF energy and uses a simpled equation for CSFs with only open-shell orbitals (1 and 2).
+the CSF energy and assumes CSFs only consist of open-shell orbitals.
 
 The code first creats a Heisenberg FCIDUMP file and then runs the GA simulation with
 the FCIDUMP file.
@@ -39,6 +40,6 @@ ga.perform_GA(
         fcidump=fcidump,
         norb=20,
         sms_ref_csf=ref_csf,
-        tMinimize=True,
         sms_ref_ordering=ref_ordering
         )
+
