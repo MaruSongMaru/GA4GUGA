@@ -195,7 +195,10 @@ class FCIDUMPReader:
         else:
             permutation = (0, ) + permutation
 
-        if len(next(iter(integral_dict))) == 4:
+        key = next(iter(integral_dict))
+        if isinstance(key, int):
+            pass
+        elif len(key) == 4:
             # Two-body integral
             two_body_permuted_dict = {}
             for (i, j, k, l), value in integral_dict.items():
@@ -207,7 +210,7 @@ class FCIDUMPReader:
                 new_indices = self._canonical_indices(new_i, new_j, new_k, new_l)
                 two_body_permuted_dict[new_indices] = value
             return two_body_permuted_dict
-        elif len(next(iter(integral_dict))) == 2:
+        elif len(key) == 2:
             # One-body integral
             one_body_permuted_dict = {}
             for (i, j), value in integral_dict.items():
@@ -218,7 +221,7 @@ class FCIDUMPReader:
                 else:
                     one_body_permuted_dict[(new_j, new_i)] = value
             return one_body_permuted_dict
-        elif len(next(iter(integral_dict))) == 1:
+        elif len(key) == 1:
             # Orbital energy
             orb_energy_permuted_dict = {}
             for i, value in integral_dict.items():
