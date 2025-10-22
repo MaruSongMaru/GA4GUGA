@@ -3,7 +3,6 @@
 # The sign of the fitness doesn't matter, as it is rescaled in sampling.py
 # But when targetting a minimum, -1 has to be multipled at the end to give the
 # minimum a larger score.
-from FCIDUMP_tools import IntegralClass
 from enum import Enum, auto
 from GA_mod import extend_ordering
 from GA_mod import GUGA_diag
@@ -227,7 +226,6 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, norb,
     sms_mapping_dict = POPClass.sms_mapping_dict
     csf_list = kwargs.get('csf_list', None)
     tMinimize = kwargs.get('tMinimize', False)
-    J = kwargs.get('J', None)
 
     if tExtendChrom:
         extended_pop = [extend_ordering.extend_ordering(ordering, 
