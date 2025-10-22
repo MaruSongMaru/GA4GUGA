@@ -141,7 +141,7 @@ and doubly occupied orbital couplings, respectively.
 
 ##### Diagonal elements of given CSFs (`MIN_MAX_DIFF`, `MAX_DIAG_ELEM`, and `MIN_DIAG_ELEM`)
 
-- csf_list $csf_list$(list[list[int]])
+- csf_list `csf_list`(list[list[int]])
     Specifies the list of CSFs that are used for fitness score evaluation.
 
 ##### S-Ms mapping fitness functions (`DIAG_ELEM_SMS_MAPPING` and `FAST_DIAG_MIN_OSONLY`)
