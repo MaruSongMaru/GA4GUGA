@@ -1,6 +1,6 @@
 """
 Perform a GA simulation with the S-Ms mapping for a 20-site Heisenberg chain.
-`ref_csf` defines the S-Ms consistent CSF for `ref_ordering`.
+`ref_csf` defines the S-Ms consistent CSF.
 Therefore, the S-Ms mappling {site:coupling} is {1:1, 2:2, 3:1, 4:2, ..., 19:1, 20:2}.
 
 `FAST_DIAG_MIN_OSONL` "minimizes" the (S-MS consistent) CSF energy using only
@@ -22,7 +22,6 @@ fcidump = 'FCIDUMP_20site_Heisenberg_chain_nn'
 
 ref_csf = [1,2,1,2,1,2,1,2,1,2,
            1,2,1,2,1,2,1,2,1,2]
-ref_ordering = tuple(range(1,21))
 
 # Create a Heisenberg FCIDUMP file where J = 1/r using the geometry in 
 # `xyzfile` only considering 0.9 =< r =< 1.1.
@@ -39,7 +38,6 @@ ga.perform_GA(
         co_function=co.order_co,
         fcidump=fcidump,
         norb=20,
-        sms_ref_csf=ref_csf,
-        sms_ref_ordering=ref_ordering
+        sms_ref_csf=ref_csf
         )
 

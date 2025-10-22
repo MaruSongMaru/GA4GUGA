@@ -10,10 +10,10 @@ from GA_mod import config
 import numpy as np
 
 class FitnessFunction(Enum):
-    DIAG_ELEM_SMS_MAPPING = auto()
     MIN_MAX_DIFF = auto()
     MAX_DIAG_ELEM = auto()
     MIN_DIAG_ELEM = auto()
+    DIAG_ELEM_SMS_MAPPING = auto()
     FAST_DIAG_MIN_OSONLY = auto()
 
 def _diag_elem_sms_mapping(population, extended_pop, sms_mapping_dict, FCIDUMPClass, norb, tMinimize):

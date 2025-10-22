@@ -42,7 +42,6 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
     checkpoint_prefix = kwargs.get('checkpoint_prefix', 'FCIDUMP_checkpoint')
 
     sms_ref_csf = kwargs.get('sms_ref_csf', None)
-    sms_ref_ordering = kwargs.get('sms_ref_ordering', None)
 
     print("Genetic Algoritm simulation started", file=sys.stdout)
     print(f"GIT hash: {git_hash}", file=sys.stdout)
@@ -57,9 +56,9 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
     print(f"- Fitness function: {fitness_function}", file=sys.stdout)
     print(f"- Clustering period: {cluster_period}", file=sys.stdout)
     print(f"- Stagnation limit: {stagnation_limit}", file=sys.stdout)
-    if sms_ref_csf is not None and sms_ref_ordering is not None:
+    if sms_ref_csf is not None:
         print(f"- S-Ms mapping reference CSF: {sms_ref_csf}", file=sys.stdout)
-        print(f"- S-Ms mapping reference ordering: {sms_ref_ordering}", file=sys.stdout)
+        sms_ref_ordering = tuple(range(1, norb + 1))
     print("", file=sys.stdout)
     print(f"Checkpoint trigger: Create file '{checkpoint_trigger}' to write current best ordering", file=sys.stdout)
     print("", file=sys.stdout)
