@@ -11,8 +11,9 @@ from GA_mod import config
 from FCIDUMP_tools import IntegralClass
 import subprocess
 
-def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates, 
+def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
                restricted_ordering_len, generations, co_function, fcidump, norb,
+               cluster_period=5, stagnation_limit=100,
                on_site_permutation=(1,), num_prefix=0, num_suffix=0, 
                restart_filename=None, **kwargs):
     """
@@ -43,14 +44,15 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
     # TODO: set other variables as global as well.
     config.set_ordering_params(on_site_permutation, num_prefix, num_suffix)
 
+    git_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
+
     pop_filename = kwargs.get('pop_file_name', 'current_pop.log')
+
     checkpoint_trigger = kwargs.get('checkpoint_trigger', 'WRITE_CHECKPOINT')
     checkpoint_prefix = kwargs.get('checkpoint_prefix', 'FCIDUMP_checkpoint')
-    git_hash = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
+
     sms_ref_csf = kwargs.get('sms_ref_csf', None)
     sms_ref_ordering = kwargs.get('sms_ref_ordering', None)
-    cluster_period = kwargs.get('cluster_period', 5)
-    stagnation_limit = kwargs.get('stagnation_limit', max(100, generations // 100))
 
     print("Genetic Algoritm simulation started", file=sys.stdout)
     print(f"GIT hash: {git_hash}", file=sys.stdout)
