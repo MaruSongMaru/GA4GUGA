@@ -1,7 +1,10 @@
 # GA4GUGA
 
-A genetic algorithm (GA) for finding optimal orbital orderings that yield compact wave function representations in GUGA bases.
-The code reads an FCIDUMP file, performs a GA simulation using diagonal-element information (see Section 3 of Reference [1] for details of the available fitness functions), and writes a reordered FCIDUMP file using the best ordering found.
+A genetic algorithm (GA) for finding optimal orbital orderings that yield
+compact wave function representations in GUGA bases.  The code reads an FCIDUMP
+file, performs a GA simulation using diagonal-element information, and writes a
+reordered FCIDUMP file using the best ordering found.  For details of the
+algorithm, please see Section 2 of Reference [1].
 
 ## Installation
 
@@ -20,8 +23,11 @@ python test_installation.py
 
 ## Quick Start
 
-Once installed, you can directly run the example scripts located in the
-`examples/` directory. Below is a brief description of each:
+A GA simulation can be performed with `ga.perform_GA`.
+Examples scripts are located in the `examples/` directory.
+During the course of a GA simulation, the latest population (set of orderings)
+are stored in `current_pop.log`.
+Below is a brief description of each:
 
 - `fast_20site_Heisenberg_chain.py`
     This example runs a GA simulation for a 20-site NN Heisenberg chain
@@ -39,6 +45,9 @@ Once installed, you can directly run the example scripts located in the
     evaluates the CSF energives over the 14 collinear VVS CSFs and maximizes the
     highest and the lowest CSF energies.
 
+- `restart.py`
+    This example runs a GA simulation starting from `NN_Heisenberg_20chain.pop`.
+
 ### Checkpoint feature
 
 ```bash
@@ -48,19 +57,49 @@ touch WRITE_CHECKPOINT
 During a GA run, creating this file triggers writing an FCIDUMP file with the
 current best ordering.
 
+## Fitness Functions
+
+**GA4GUGA** supports fitness functions using CSF energies of various CSFs (see
+Section 3 of Reference [1] for details) and using only S-Ms consistent CSF
+energies (Subsection 3.1 of Reference [1]).
+
+-  `MIN_MAX_DIFF`
+    Maximizes the difference between the highest and the lowest CSF energies
+    of a given set of CSFs.
+
+-  `MAX_DIAG_ELEM`
+    Maximizes the highest CSF energies of a given set of CSFs.
+
+-  `MIN_DIAG_ELEM`
+    Minimizes the highest CSF energies of a given set of CSFs.
+
+-  `DIAG_ELEM_SMS_MAPPING`
+    Maximizes or minimizes (depending on the option) the energy of the S-Ms
+    consistent CSF.
+
+-  `FAST_DIAG_MIN_OSONLY`
+    Minimizes the energy of the S-Ms consistent CSF, but only evaluates ordering
+    -dependent terms in the CSF energy evaluation, thus faster than
+    `DIAG_ELEM_SMS_MAPPING`.
+
 
 ## Input arguments
 
-Required arguments (black) and optional arguments (blue) are listed below. CSFs
-are assumed to be in the step-vector notation where $0$, $1$, $2$, and $3$
+Arguments for the `run_GA.ga.perform_GA` funtion are listed below.
+CSFs are assumed to be in the step-vector notation where $0$, $1$, $2$, and $3$
 represent empty, increasing intermediate spin by 1/2, decreasing by 1/2,
 and doubly occupied orbital couplings, respectively.
 
+### Required arguments
+
 - fitness_function `measure_fitness.FitnessFunction.FITNESS_FUNCTION_NAME`
-    Choose the fitness function for the GA simulation. See Section 3 of Reference [1]. Options include: DIAG_ELEM_SMS_MAPPING, MIN_MAX_DIFF, MAX_DIAG_ELEM, MIN_DIAG_ELEM, NEEL_FAST_DIAG, NEEL_FAST_DIAG_MIN, NEEL_FAST_DIAG_MAX, MAX_FAST_DIAG, MIN_FAST_DIAG, NEEL_FAST_DIAG_MIN_OSONLY.
+    Chooses the fitness function for the GA simulation.
+    Fitness functions are implemented in `GA_mod.measure_fitness.FitnessFunction`.
 
 - co_function `crossover.CO_FUNCTION_NAME`
-    Crossover operator to use, e.g., `crossover.CO_FUNCION_NAME`.
+    Chooses the crossover operator for the GA simulation.
+    Crossover operators are defined in `GA_mod.crossover`
+    `order_co` is the order crossover operator.
 
 - num_chroms $n$(int)
     Population size (number of chromosomes).
@@ -69,10 +108,13 @@ and doubly occupied orbital couplings, respectively.
     Number of elite chromosomes retained each generation.
 
 - mutation_rates $mlist$(list[float])
-    One or more mutation rates. If multiple rates are provided, the algorithm can cycle through them when progress stalls.
+    A list of mutation rates. If multiple rates are provided, the algorithm can
+    cycle through them when progress stalls. Even if a single mutation rate is
+    provided, it has to be in list format (e.g., `[0.001]`).
 
 - restricted_ordering_len $n$(int)
-    Length of the effective (restricted) ordering that the GA optimizes before expansion.
+    Length of the effective (restricted) ordering that the GA optimizes before
+    expansion (see **Restricting orderings** below for ordering expansion).
 
 - generations $n$(int)
     Number of generations to run.
@@ -84,46 +126,63 @@ and doubly occupied orbital couplings, respectively.
     Total number of orbitals. Must satisfy the consistency check:
     `norb = num_prefix + num_suffix + restricted_ordering_len * len(on_site_permutation)`
 
+### Optional arguments
+
+- cluster_period $n$(int)
+    Period of cluster shuffling replacing the crossover step.
+    The default value is 5.
+
+- stagnation_limit $n$(int)
+    If the best fitness score does not evolve for $n$ generations, the mutation
+    rate is updated to the next value specified in `mutation_rates`.
+    The default value is 100.
+
 #### Fitness-function specific arguments
 
-- <span style="color:blue">csf_list</span> $csf_list$(list[list[int]])
-    List of CSF step-vectors to evaluate. Required for certain fitness functions (e.g., MIN_MAX_DIFF, MAX_DIAG_ELEM, MIN_DIAG_ELEM, MAX_FAST_DIAG, MIN_FAST_DIAG).
+##### Diagonal elements of given CSFs (`MIN_MAX_DIFF`, `MAX_DIAG_ELEM`, and `MIN_DIAG_ELEM`)
 
-- <span style="color:blue">tMinimize</span> $l$(bool)
-    For DIAG_ELEM_SMS_MAPPING only: if True, uses the absolute value to target minima.
+- csf_list $csf_list$(list[list[int]])
+    Specifies the list of CSFs that are used for fitness score evaluation.
 
-- <span style="color:blue">SMS</span> $l$(bool)
+##### S-Ms mapping fitness functions (`DIAG_ELEM_SMS_MAPPING` and `FAST_DIAG_MIN_OSONLY`)
+
+- sms_ref_csf $csf$(list[int])
+    Defines the S-Ms consistent CSF in the natural ordering.
+    For example, `sms_ref_csf = [1, 2, 1, 2]` maps
+    `{orbital:coupling} = {1:1, 2:2, 3:1, 4:2}`.
+
+- tMinimize $l$(bool)
+    Only required for `DIAG_ELEM_SMS_MAPPING` fitness function.
+    This booliean determins whether the GA maximizes (if false) or minimizes
+    (if true) the fitness score.
 
 #### Restricting orderings
-
 If `norb = 10`, `num_prefix = 3`, `num_suffix = 2`, `restricted_ordering_len = 5`, and `on_site_permutation = (1,)` (default), the GA is performed only for the middle set `{4,5,6,7,8}`. Orderings maintain the structure `(1,2,3, {4,5,6,7,8}, 9,10)`, e.g., `(1,2,3,4,6,7,5,8,9,10)` or `(1,2,3,6,8,7,4,5,9,10)`.
-
 If `norb = 10`, `num_prefix = 2`, `num_suffix = 2`, `restricted_ordering_len = 3`, and `on_site_permutation = (2,1)`, then orderings maintain the structure `(1,2, {(4,3), (6,5), (8,7)}, 9,10)`, e.g., `(1,2,5,6,4,3,8,7,9,10)`.
 
-- <span style="color:blue">on_site_permutation</span> $perm$(tuple[int])
-    Pattern applied to each gene when expanding the restricted ordering to the full ordering. Default: `(1,)`.
+- on_site_permutation $perm$(tuple[int])
+    Pattern applied to each gene (number in the ordering) when expanding the
+    restricted ordering to the full ordering. Default: `(1,)`.
 
-- <span style="color:blue">num_prefix</span> $n$(int)
-    Number of leading orbitals that remain fixed (not optimized). Default: `0`.
+- num_prefix $n$(int)
+    Number of leading orbitals that remain fixed (not optimized).
+    Default: `0`.
 
-- <span style="color:blue">num_suffix</span> $n$(int)
-    Number of trailing orbitals that remain fixed (not optimized). Default: `0`.
+- num_suffix $n$(int)
+    Number of trailing orbitals that remain fixed (not optimized).
+    Default: `0`.
 
 #### Restart
 
-- <span style="color:blue">restart_filename</span> `pop_filename`
-    If provided, restart the GA from a saved state.
+- restart_filename `pop_filename`
+    If provided, restart the GA from a saved population.
 
 #### Logging arguments
 
-- <span style="color:blue">checkpoint_trigger</span> n(str)
-    File name whose presence triggers writing a checkpoint FCIDUMP of the current best ordering during the run. Default: `"WRITE_CHECKPOINT"`.
-
-- <span style="color:blue">checkpoint_prefix</span> n(str)
-    Prefix for the checkpoint FCIDUMP file name. Default: `"FCIDUMP_checkpoint"`.
-
-- <span style="color:blue">pop_file_name</span> n(str)
-    Where to log the current population each generation. Default: `"current_pop.log"`.
+- checkpoint_trigger n(str)
+    File name whose presence triggers writing an FCIDUMP file of the current
+    best ordering during the run.
+    Default: `"WRITE_CHECKPOINT"`.
 
 
 ## Citation
