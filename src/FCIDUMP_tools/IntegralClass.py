@@ -1,3 +1,5 @@
+from typing import Union
+
 class FCIDUMPReader:
     def __init__(self, filename: str):
         """Initialize the FCIDUMP reader with a filename."""
@@ -6,7 +8,7 @@ class FCIDUMPReader:
         self.two_body_integrals: dict[tuple[int, int, int, int], float] = {}  # (i,j,k,l) -> value
         self.orbital_energies: dict[int, float] = {}    # i -> value
         self.core_energy = 0.0
-        self.header_lines = []  # Store header lines for later use
+        self.header_lines: list[str] = []  # Store header lines for later use
         self.read_file()
         # integral dicts of the natural (original) ordering
         self._one_body_integrals_natural = self.one_body_integrals.copy()
@@ -72,25 +74,16 @@ class FCIDUMPReader:
         2. The pair with larger maximum comes first
         3. Within each pair, the larger index comes first
         """
-        # Sort i,j and k,l pairs internally (larger first)
+        # Sort pairs internally (larger first) - this is more efficient
         ij = (max(i, j), min(i, j))
         kl = (max(k, l), min(k, l))
 
-        # Compare the maximum values
-        if ij[0] > kl[0]:
-            # i,j has larger maximum, so it comes first
+        # Use tuple comparison which naturally does lexicographic ordering
+        # If ij >= kl, put ij first; otherwise put kl first
+        if ij >= kl:
             return (ij[0], ij[1], kl[0], kl[1])
-        elif kl[0] > ij[0]:
-            # k,l has larger maximum, so it comes first
-            return (kl[0], kl[1], ij[0], ij[1])
         else:
-            # Maxima are equal, compare the minima
-            if ij[1] >= kl[1]:
-                # i,j has larger or equal minimum, so it comes first
-                return (ij[0], ij[1], kl[0], kl[1])
-            else:
-                # k,l has larger minimum, so it comes first
-                return (kl[0], kl[1], ij[0], ij[1])
+            return (kl[0], kl[1], ij[0], ij[1])
 
     def get_integral(self, i: int, j: int, k: int, l: int) -> float:
         """
@@ -163,28 +156,34 @@ class FCIDUMPReader:
 
         return result
 
-    def permute_integrals(self, permutation: tuple[int], t_passive: bool = True):
+    def permute_integrals(self, permutation: tuple[int, ...], t_passive: bool = True) -> None:
+        """Permute all integral dictionaries according to the given permutation."""
         # permutation is applied to the natural ordering
         if self._one_body_integrals_natural:
-            self.one_body_integrals = self.permute_integral_dict(
+            self.one_body_integrals = self.permute_integral_dict(  # type: ignore[assignment, arg-type]
                 self._one_body_integrals_natural, permutation, t_passive)
 
         if self._two_body_integrals_natural:
-            self.two_body_integrals = self.permute_integral_dict(
+            self.two_body_integrals = self.permute_integral_dict(  # type: ignore[assignment, arg-type]
                 self._two_body_integrals_natural, permutation, t_passive)
 
         if self._orbital_energies_natural:
-            self.orbital_energies = self.permute_integral_dict(
+            self.orbital_energies = self.permute_integral_dict(  # type: ignore[assignment, arg-type]
                 self._orbital_energies_natural, permutation, t_passive)
 
-    def permute_integral_dict(self, integral_dict: dict[tuple[int, ...], float], permutation: tuple[int], t_passive: bool = True) -> dict[tuple[int, int, int, int], float]:
+    def permute_integral_dict(
+        self, 
+        integral_dict: dict[Union[tuple[int, ...], int], float], 
+        permutation: tuple[int, ...], 
+        t_passive: bool = True
+    ) -> dict[Union[tuple[int, ...], int], float]:
         """
         Apply orbital permutation to integrals and maintain canonical ordering.
         
         Args:
-            integral_dict: Dictionary of integrals with keys (i,j,k,l)
-            permutation: Tuple/list representing the orbital permutation
-            t_passive: If True, permutation includes index 0; if False, index 0 is preserved
+            integral_dict: Dictionary of integrals with tuple or int keys
+            permutation: Tuple representing the orbital permutation
+            t_passive: If True, permutation uses passive notation; if False, active notation
         
         Returns:
             dict: New dictionary with permuted canonical indices
@@ -195,41 +194,45 @@ class FCIDUMPReader:
         else:
             permutation = (0, ) + permutation
 
+        # Determine integral type by inspecting first key
         key = next(iter(integral_dict))
+        
         if isinstance(key, int):
-            pass
-        elif len(key) == 4:
-            # Two-body integral
-            two_body_permuted_dict = {}
-            for (i, j, k, l), value in integral_dict.items():
-                new_i = permutation.index(i)
-                new_j = permutation.index(j)
-                new_k = permutation.index(k)
-                new_l = permutation.index(l)
+            # Orbital energy (single integer key)
+            orb_energy_permuted_dict: dict[int, float] = {}
+            for i, value in integral_dict.items():  # type: ignore[misc]
+                new_i = permutation.index(i)  # type: ignore[arg-type]
+                orb_energy_permuted_dict[new_i] = value
+            return orb_energy_permuted_dict  # type: ignore[return-value]
+        elif isinstance(key, tuple):  # type: ignore[misc]
+            key_len = len(key)
+            if key_len == 4:
+                # Two-body integral
+                two_body_permuted_dict: dict[tuple[int, int, int, int], float] = {}
+                for (i, j, k, l), value in integral_dict.items():  # type: ignore[misc]
+                    new_i = permutation.index(i)
+                    new_j = permutation.index(j)
+                    new_k = permutation.index(k)
+                    new_l = permutation.index(l)
 
-                new_indices = self._canonical_indices(new_i, new_j, new_k, new_l)
-                two_body_permuted_dict[new_indices] = value
-            return two_body_permuted_dict
-        elif len(key) == 2:
-            # One-body integral
-            one_body_permuted_dict = {}
-            for (i, j), value in integral_dict.items():
-                new_i = permutation.index(i)
-                new_j = permutation.index(j)
-                if new_i <= new_j:
-                    one_body_permuted_dict[(new_i, new_j)] = value
-                else:
-                    one_body_permuted_dict[(new_j, new_i)] = value
-            return one_body_permuted_dict
-        elif len(key) == 1:
-            # Orbital energy
-            orb_energy_permuted_dict = {}
-            for i, value in integral_dict.items():
-                new_i = permutation.index(i)
-                orb_energy_permuted_dict[(new_i)] = value
-            return orb_energy_permuted_dict
+                    new_indices = self._canonical_indices(new_i, new_j, new_k, new_l)
+                    two_body_permuted_dict[new_indices] = value
+                return two_body_permuted_dict  # type: ignore[return-value]
+            elif key_len == 2:
+                # One-body integral
+                one_body_permuted_dict: dict[tuple[int, int], float] = {}
+                for (i, j), value in integral_dict.items():  # type: ignore[misc]
+                    new_i = permutation.index(i)
+                    new_j = permutation.index(j)
+                    if new_i <= new_j:
+                        one_body_permuted_dict[(new_i, new_j)] = value
+                    else:
+                        one_body_permuted_dict[(new_j, new_i)] = value
+                return one_body_permuted_dict  # type: ignore[return-value]
+            else:
+                raise ValueError(f"Invalid tuple length in integral dictionary: {key_len}")
         else:
-            raise ValueError("Invalid integral dictionary")
+            raise ValueError(f"Invalid key type in integral dictionary: {type(key)}")
 
     def summarize(self):
         """Print a summary of the integrals read from the file."""
@@ -239,7 +242,15 @@ class FCIDUMPReader:
         print(f"Number of one-body integrals: {len(self.one_body_integrals)}")
         print(f"Number of two-body integrals: {len(self.two_body_integrals)}")
 
-    def dump_integrals(self, filename: str, permutation: tuple[int], digits=14):
+    def dump_integrals(self, filename: str, permutation: tuple[int, ...], digits: int = 14) -> None:
+        """
+        Write permuted integrals to an FCIDUMP file.
+        
+        Args:
+            filename: Output filename
+            permutation: Orbital permutation to apply
+            digits: Number of decimal digits for formatting (default: 14)
+        """
         self.permute_integrals(permutation)
 
         if not self.header_lines:
@@ -247,7 +258,8 @@ class FCIDUMPReader:
             return
 
         # For nice output formatting
-        space = lambda value, total_width=22: ' ' * (total_width - len(f"{value:.{digits}f}"))
+        def space(value: float, total_width: int = 22) -> str:
+            return ' ' * (total_width - len(f"{value:.{digits}f}"))
 
         with open(filename, 'w') as f:
             f.writelines(self.header_lines)
