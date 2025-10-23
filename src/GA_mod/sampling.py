@@ -5,24 +5,12 @@ def rescale_fitness(fitness):
     min_fitness = min(fitness.values())
     max_fitness = max(fitness.values())
 
-    #-------------------Rescaling fitnesses by abs(min + max)------------------#
     if max_fitness < 0:
         shift = abs(min_fitness + max_fitness)
         rescaled_fitness = {chromosome:
                         (fitness[chromosome] + shift) for chromosome in fitness}
     else:
         rescaled_fitness = fitness.copy()
-    #--------------------------------------------------------------------------#
-#    #-------------------Rescaling fitnesses between 1 and 2-------------------#
-#    range_fitness = max_fitness - min_fitness
-#
-#    if range_fitness == 0:
-#        return {chromosome: 1.0 for chromosome in fitness}
-#
-#    rescaled_fitness = {chromosome:
-#                        (fitness[chromosome] - min_fitness) / range_fitness + 1
-#                        for chromosome in fitness}
-#    #--------------------------------------------------------------------------#
 
     return rescaled_fitness
 

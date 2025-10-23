@@ -35,7 +35,6 @@ class Population:
         return population
 
     def mutate(self, mutation_rate):
-# -------------------- Original mutation --------------------------------------#
         # mutate only non-elite chromosomes
         for i in range(self.elite_size, self.num_chroms):
             for gene1 in range(0, self.ordering_len):
@@ -93,7 +92,7 @@ class Population:
         """
         Perform crossover on the given population (list of tuples).
         """
-        random.shuffle(pool) # Is it redundant?
+        random.shuffle(pool)
 
         pool = [list(individual) for individual in pool]
 

@@ -27,7 +27,6 @@ def xyz_parser(xyzfile: str) -> tuple[list[str], np.ndarray]:
     with open(xyzfile, 'r') as f:
         lines = f.readlines()
     natom = int(lines[0])
-    # auxiliary = lines[1]
     atoms: list[str] = []
     coords_list: list[list[float]] = []
     for i in range(2, natom+2):

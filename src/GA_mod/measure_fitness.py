@@ -20,7 +20,6 @@ def _diag_elem_sms_mapping(population, extended_pop, sms_mapping_dict, FCIDUMPCl
     """Internal function that calculates fitness based on reference diagonal elements."""
     reduced_fitness = {}
     for chrom, extended_chrom  in zip(population, extended_pop):
-        # permute CSF
         CSF_ref = [sms_mapping_dict[orb] for orb in extended_chrom]
 
         FCIDUMPClass.permute_integrals(extended_chrom, t_passive=True)

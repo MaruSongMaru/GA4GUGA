@@ -1,7 +1,8 @@
 __pycache__
 
 *log
-FCIDUMP*
+FCIDUMP
+FCIDUMP_*
 
 # pip install related files
 *.egg-info/
