@@ -59,6 +59,8 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
     if sms_ref_csf is not None:
         print(f"- S-Ms mapping reference CSF: {sms_ref_csf}", file=sys.stdout)
         sms_ref_ordering = tuple(range(1, norb + 1))
+    else:
+        sms_ref_ordering = None
     print("", file=sys.stdout)
     print(f"Checkpoint trigger: Create file '{checkpoint_trigger}' to write current best ordering", file=sys.stdout)
     print("", file=sys.stdout)
