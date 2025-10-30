@@ -30,6 +30,6 @@ ga.perform_GA(
         fcidump=fcidump,
         norb=20,
         sms_ref_csf=ref_csf,
-        restart_filename='NN_Heisenberg_20chain.pop'
+        restart_filename=FILEPATH + 'NN_Heisenberg_20chain.pop'
         )
 
