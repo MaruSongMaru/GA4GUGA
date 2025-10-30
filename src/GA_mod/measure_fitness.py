@@ -1,12 +1,15 @@
-# Wrapper to measure fitness scores.
-# The larger the score, the better the fitness.
-# The sign of the fitness doesn't matter, as it is rescaled in sampling.py
-# But when targetting a minimum, -1 has to be multipled at the end to give the
-# minimum a larger score.
+"""
+Wrapper to measure fitness scores.
+The larger the score, the better the fitness.
+The sign of the fitness doesn't matter, as it is rescaled in sampling.py
+But when targetting a minimum, -1 has to be multipled at the end to give the
+minimum a larger score.
+"""
 from enum import Enum, auto
 from GA_mod import extend_ordering
 from GA_mod import GUGA_diag
 from GA_mod import config
+from GA_mod import auxiliary_functions as af
 import numpy as np
 
 class FitnessFunction(Enum):
@@ -88,115 +91,11 @@ def _fast_diag_min_osonly(population, extended_pop, J, sms_mapping_dict):
         J_reordered = J[np.ix_(sorting_arr, sorting_arr)]
 
         csf_stepvec = [sms_mapping_dict[i] for i in extended_chrom]
-        X = X_matrix_openshell_only(csf_stepvec)
+        X = af.X_matrix_openshell_only(csf_stepvec)
 
         reduced_fitness[chrom] = np.sum(J_reordered * X) * -1
     return reduced_fitness
 
-#------------------------------------------------------------------------------#
-def J_mat_from_fcidump(FCIDUMPClass, norb):
-    """
-    Generate the J matrix from the FCIDUMP class.
-    We onlny use exchange integrals.
-    """
-    J = np.zeros((norb, norb))
-    for i in range(norb):
-        for j in range(i + 1, norb):
-            J[i, j] = -FCIDUMPClass.get_integral(j + 1, i + 1, j + 1, i + 1)
-            J[j, i] = -FCIDUMPClass.get_integral(j + 1, i + 1, j + 1, i + 1)
-
-    return J
-
-def N_matrix(d_vec):
-    n = len(d_vec)
-    N = np.zeros((n, n))
-    f = lambda idx: d_vec[idx] - d_vec[idx] // 2
-    for i, j in zip(*np.triu_indices(n, k=1)):
-        N[i, j] = f(i) * f(j)
-        N[j, i] = N[i, j]
-
-    return N
-
-def X_matrix(d_vec):
-    N = len(d_vec)
-
-    db = lambda dv: dv - 3 * (dv // 2)
-    A2 = lambda b, x, y: (b + x) / (b + y)
-
-    d_vec = np.array(d_vec)
-    b_vec = np.cumsum(db(d_vec))
-    X = np.zeros((N, N))
-
-    def f(b, d):
-        if d == 1:
-            return A2(b, 2, 0) * A2(b, -1, 1)
-        elif d == 2:
-            return A2(b, 0, 2) * A2(b, 3, 1)
-        else:
-            return 1
-
-    for i, j in zip(*np.triu_indices(N, k=1)):
-        di, dj = d_vec[i], d_vec[j]
-        bi, bj = b_vec[i], b_vec[j]
-        if di == 1 and dj == 1:
-            Xij = A2(bi, 2, 0) * A2(bj, -1, 1)
-        elif di == 1 and dj == 2:
-            Xij = A2(bi, 2, 0) * A2(bj, 3, 1)
-        elif di == 2 and dj == 1:
-            Xij = A2(bi, 0, 2) * A2(bj, -1, 1)
-        elif di == 2 and dj == 2:
-            Xij = A2(bi, 0, 2) * A2(bj, 3, 1)
-        else:
-            Xij = 0
-
-        if Xij != 0:
-            for k in range(i + 1, j):
-                Xij *= f(b_vec[k], d_vec[k])
-            Xij = np.sqrt(Xij)
-
-        if di * dj == 2:
-            Xij *= -1.0
-
-        X[i, j] = Xij
-        X[j, i] = Xij
-
-    np.fill_diagonal(X, 0)
-
-    return X
-
-def X_matrix_openshell_only(d_vec):
-    """
-    Compute the matrix X_ij for a given step-vector d.
-    See equation (A.10) in the appendix (A.2) of Werner Dobrautz's phd thesis.
-    The exact form used here will be found in our paper (update this once the
-    paper is published).
-    **Note that this assumes the step-vector only contains 1's and 2's.**
-
-    Args:
-        d_vec (list): step-vector not including 0 and 3
-
-    Returns:
-        N x N array where X[i][j] corresponds to the computed value for i < j.
-    """
-
-    N = len(d_vec)
-    d_vec = np.array(d_vec)
-    s_vec = 2 * (d_vec == 1) - 1
-    b_vec = np.cumsum(s_vec)
-
-    A = (b_vec - 2 * d_vec + 4) / (b_vec + 2 * d_vec - 2)
-    B = (b_vec + 4 * d_vec - 5) / (b_vec + 1)
-    X = np.ones((N, N))
-
-    for i, j in zip(*np.triu_indices(N, k=1)):
-        X[i, j] = X[i, j - 1] * A[j - 1] * B[j] 
-    X = np.sqrt(X)
-    np.fill_diagonal(X, 0)
-    for i, j in zip(*np.triu_indices(N, k=1)):
-        X[i, j] *= s_vec[i] * s_vec[j]
-        X[j, i] = X[i, j]
-
-    return X
 #------------------------------------------------------------------------------#
 
 def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, norb, 
@@ -248,7 +147,7 @@ def calculate_fitness(method: FitnessFunction, POPClass, FCIDUMPClass, norb,
     elif method == FitnessFunction.FAST_DIAG_MIN_OSONLY:
         if sms_mapping_dict is None:
             raise ValueError("sms_mapping_dict is required for FAST_DIAG_MIN_OSONLY method")
-        J = J_mat_from_fcidump(FCIDUMPClass, norb)
+        J = af.J_mat_from_fcidump(FCIDUMPClass, norb)
         fitness_ht = _fast_diag_min_osonly(POPClass.current_pop, extended_pop, J, sms_mapping_dict)
     else:
         raise ValueError(f"Unknown fitness method: {method}")
