@@ -23,8 +23,9 @@ python test_installation.py
 
 ## Quick Start
 
-A GA simulation can be performed with `ga.perform_GA`.
-Examples scripts are located in the `examples/` directory.
+Once installed, you can import the package with `import GA_mod.run_GA as ga`.
+Then, a GA simulation can be performed with `ga.perform_GA`.
+Example GA scripts are located in the `examples/` directory.
 During the course of a GA simulation, the latest population (set of orderings)
 are stored in `current_pop.log`.
 Below is a brief description of each:
