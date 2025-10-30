@@ -29,23 +29,23 @@ During the course of a GA simulation, the latest population (set of orderings)
 are stored in `current_pop.log`.
 Below is a brief description of each:
 
-- `fast_20site_Heisenberg_chain.py`
+- `fast_20site_Heisenberg_chain.py`<br/>
     This example runs a GA simulation for a 20-site NN Heisenberg chain
     (Subsection 4.1 of Reference [1]) using the simplified fitness function
     with the S-Ms mapping. Only ordering-dependent terms of the CSF energy
     are evaluated for fitness measure.
 
-- `20site_Heisenberg_chain.py`
+- `20site_Heisenberg_chain.py`<br/>
     This example is the same as `fast_20site_Heisenberg_chain`, but evaluates
     the full CSF energies, thus slower than `fast_20site_Heisenberg_chain`.
 
-- `P-cluster_48i40.py`
+- `P-cluster_48i40.py`<br/>
     This example runs a GA simulation for the CAS(48e,40o) P-cluster consisting
     of 8 Fe sites (Subsection 5.2.1 of Reference [1]). The fitness function 
     evaluates the CSF energives over the 14 collinear VVS CSFs and maximizes the
     highest and the lowest CSF energies.
 
-- `restart.py`
+- `restart.py`<br/>
     This example runs a GA simulation starting from `NN_Heisenberg_20chain.pop`.
 
 ### Checkpoint feature
@@ -63,25 +63,24 @@ current best ordering.
 Section 3 of Reference [1] for details) and using only S-Ms consistent CSF
 energies (Subsection 3.1 of Reference [1]).
 
--  `MIN_MAX_DIFF`
+-  `MIN_MAX_DIFF`<br/>
     Maximizes the difference between the highest and the lowest CSF energies
     of a given set of CSFs.
 
--  `MAX_DIAG_ELEM`
+-  `MAX_DIAG_ELEM`<br/>
     Maximizes the highest CSF energies of a given set of CSFs.
 
--  `MIN_DIAG_ELEM`
+-  `MIN_DIAG_ELEM`<br/>
     Minimizes the highest CSF energies of a given set of CSFs.
 
--  `DIAG_ELEM_SMS_MAPPING`
+-  `DIAG_ELEM_SMS_MAPPING`<br/>
     Maximizes or minimizes (depending on the option) the energy of the S-Ms
     consistent CSF.
 
--  `FAST_DIAG_MIN_OSONLY`
+-  `FAST_DIAG_MIN_OSONLY`<br/>
     Minimizes the energy of the S-Ms consistent CSF, but only evaluates ordering
     -dependent terms in the CSF energy evaluation, thus faster than
     `DIAG_ELEM_SMS_MAPPING`.
-
 
 ## Input arguments
 
@@ -92,47 +91,47 @@ and doubly occupied orbital couplings, respectively.
 
 ### Required arguments
 
-- fitness_function `measure_fitness.FitnessFunction.FITNESS_FUNCTION_NAME`
+- **fitness_function** `measure_fitness.FitnessFunction.FITNESS_FUNCTION_NAME`<br/>
     Chooses the fitness function for the GA simulation.
     Fitness functions are implemented in `GA_mod.measure_fitness.FitnessFunction`.
 
-- co_function `crossover.CO_FUNCTION_NAME`
+- **co_function** `crossover.CO_FUNCTION_NAME`<br/>
     Chooses the crossover operator for the GA simulation.
     Crossover operators are defined in `GA_mod.crossover`
     `order_co` is the order crossover operator.
 
-- num_chroms $n$(int)
+- **num_chroms** $n$(int)<br/>
     Population size (number of chromosomes).
 
-- elite_size $n$(int)
+- **elite_size** $n$(int)<br/>
     Number of elite chromosomes retained each generation.
 
-- mutation_rates $mlist$(list[float])
+- **mutation_rates** $mlist$(list[float])<br/>
     A list of mutation rates. If multiple rates are provided, the algorithm can
     cycle through them when progress stalls. Even if a single mutation rate is
     provided, it has to be in list format (e.g., `[0.001]`).
 
-- restricted_ordering_len $n$(int)
+- **restricted_ordering_len** $n$(int)<br/>
     Length of the effective (restricted) ordering that the GA optimizes before
     expansion (see **Restricting orderings** below for ordering expansion).
 
-- generations $n$(int)
+- **generations** $n$(int)<br/>
     Number of generations to run.
 
-- fcidump `PATH_TO_FCIDUMP`
+- **fcidump** `PATH_TO_FCIDUMP`<br/>
     Path to the source FCIDUMP file.
 
-- norb $n$(int)
+- **norb** $n$(int)<br/>
     Total number of orbitals. Must satisfy the consistency check:
     `norb = num_prefix + num_suffix + restricted_ordering_len * len(on_site_permutation)`
 
 ### Optional arguments
 
-- cluster_period $n$(int)
+- **cluster_period** $n$(int)<br/>
     Period of cluster shuffling replacing the crossover step.
     The default value is 5.
 
-- stagnation_limit $n$(int)
+- **stagnation_limit** $n$(int)<br/>
     If the best fitness score does not evolve for $n$ generations, the mutation
     rate is updated to the next value specified in `mutation_rates`.
     The default value is 100.
@@ -141,17 +140,17 @@ and doubly occupied orbital couplings, respectively.
 
 ##### Diagonal elements of given CSFs (`MIN_MAX_DIFF`, `MAX_DIAG_ELEM`, and `MIN_DIAG_ELEM`)
 
-- csf_list `csf_list`(list[list[int]])
+- **csf_list** `csf_list`(list[list[int]])<br/>
     Specifies the list of CSFs that are used for fitness score evaluation.
 
 ##### S-Ms mapping fitness functions (`DIAG_ELEM_SMS_MAPPING` and `FAST_DIAG_MIN_OSONLY`)
 
-- sms_ref_csf $csf$(list[int])
+- **sms_ref_csf** $csf$(list[int])<br/>
     Defines the S-Ms consistent CSF in the natural ordering.
     For example, `sms_ref_csf = [1, 2, 1, 2]` maps
     `{orbital:coupling} = {1:1, 2:2, 3:1, 4:2}`.
 
-- tMinimize $l$(bool)
+- **tMinimize** $l$(bool)<br/>
     Only required for `DIAG_ELEM_SMS_MAPPING` fitness function.
     This booliean determins whether the GA maximizes (if false) or minimizes
     (if true) the fitness score.
@@ -160,30 +159,29 @@ and doubly occupied orbital couplings, respectively.
 If `norb = 10`, `num_prefix = 3`, `num_suffix = 2`, `restricted_ordering_len = 5`, and `on_site_permutation = (1,)` (default), the GA is performed only for the middle set `{4,5,6,7,8}`. Orderings maintain the structure `(1,2,3, {4,5,6,7,8}, 9,10)`, e.g., `(1,2,3,4,6,7,5,8,9,10)` or `(1,2,3,6,8,7,4,5,9,10)`.
 If `norb = 10`, `num_prefix = 2`, `num_suffix = 2`, `restricted_ordering_len = 3`, and `on_site_permutation = (2,1)`, then orderings maintain the structure `(1,2, {(4,3), (6,5), (8,7)}, 9,10)`, e.g., `(1,2,5,6,4,3,8,7,9,10)`.
 
-- on_site_permutation $perm$(tuple[int])
+- **on_site_permutation** $perm$(tuple[int])<br/>
     Pattern applied to each gene (number in the ordering) when expanding the
     restricted ordering to the full ordering. Default: `(1,)`.
 
-- num_prefix $n$(int)
+- **num_prefix** $n$(int)<br/>
     Number of leading orbitals that remain fixed (not optimized).
     Default: `0`.
 
-- num_suffix $n$(int)
+- **num_suffix** $n$(int)<br/>
     Number of trailing orbitals that remain fixed (not optimized).
     Default: `0`.
 
 #### Restart
 
-- restart_filename `pop_filename`
+- **restart_filename** `pop_filename`<br/>
     If provided, restart the GA from a saved population.
 
 #### Logging arguments
 
-- checkpoint_trigger n(str)
+- **checkpoint_trigger** n(str)<br/>
     File name whose presence triggers writing an FCIDUMP file of the current
     best ordering during the run.
     Default: `"WRITE_CHECKPOINT"`.
-
 
 ## Citation
 
