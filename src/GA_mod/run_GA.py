@@ -56,27 +56,27 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
 
     sms_ref_csf = kwargs.get('sms_ref_csf', None)
 
-    print("Genetic Algoritm simulation started", file=sys.stdout)
-    print(f"GIT hash: {git_hash}", file=sys.stdout)
-    print("", file=sys.stdout)
+    print("Genetic Algoritm simulation started", file=sys.stdout, flush=True)
+    print(f"GIT hash: {git_hash}", file=sys.stdout, flush=True)
+    print("", file=sys.stdout, flush=True)
     if restart_filename is not None:
-        print(f"Restarting from population file: {restart_filename}\n", file=sys.stdout)
-    print(f"- Number of chromosomes: {num_chroms}", file=sys.stdout)
-    print(f"- Elite size: {elite_size}", file=sys.stdout)
-    print(f"- Mutation rates: {mutation_rates}", file=sys.stdout)
-    print(f"- Generations: {generations}", file=sys.stdout)
-    print(f"- Crossover function: {co_function.__name__}", file=sys.stdout)
-    print(f"- Fitness function: {fitness_function}", file=sys.stdout)
-    print(f"- Clustering period: {cluster_period}", file=sys.stdout)
-    print(f"- Stagnation limit: {stagnation_limit}", file=sys.stdout)
+        print(f"Restarting from population file: {restart_filename}\n", file=sys.stdout, flush=True)
+    print(f"- Number of chromosomes: {num_chroms}", file=sys.stdout, flush=True)
+    print(f"- Elite size: {elite_size}", file=sys.stdout, flush=True)
+    print(f"- Mutation rates: {mutation_rates}", file=sys.stdout, flush=True)
+    print(f"- Generations: {generations}", file=sys.stdout, flush=True)
+    print(f"- Crossover function: {co_function.__name__}", file=sys.stdout, flush=True)
+    print(f"- Fitness function: {fitness_function}", file=sys.stdout, flush=True)
+    print(f"- Clustering period: {cluster_period}", file=sys.stdout, flush=True)
+    print(f"- Stagnation limit: {stagnation_limit}", file=sys.stdout, flush=True)
     if sms_ref_csf is not None:
-        print(f"- S-Ms mapping reference CSF: {sms_ref_csf}", file=sys.stdout)
+        print(f"- S-Ms mapping reference CSF: {sms_ref_csf}", file=sys.stdout, flush=True)
         sms_ref_ordering = tuple(range(1, norb + 1))
     else:
         sms_ref_ordering = None
-    print("", file=sys.stdout)
-    print(f"Checkpoint trigger: Create file '{checkpoint_trigger}' to write current best ordering", file=sys.stdout)
-    print("", file=sys.stdout)
+    print("", file=sys.stdout, flush=True)
+    print(f"Checkpoint trigger: Create file '{checkpoint_trigger}' to write current best ordering", file=sys.stdout, flush=True)
+    print("", file=sys.stdout, flush=True)
 
     POPClass = pop.Population(num_chroms, restricted_ordering_len, elite_size,
                                tExtendChrom, sms_ref_csf, sms_ref_ordering,
@@ -97,10 +97,10 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
     bestchrom = max(reduced_fitness_dict, key=reduced_fitness_dict.get)
 
     best_fitness = reduced_fitness_dict[bestchrom]
-    print("# Generation  Ordering  Fitness", file=sys.stdout)
+    print("# Generation  Ordering  Fitness", file=sys.stdout, flush=True)
     extended_bestchrom = extend_ordering.extend_ordering(bestchrom, 
         on_site_permutation, num_prefix, num_suffix)
-    print(f"0  {extended_bestchrom}  {best_fitness}", file=sys.stdout)
+    print(f"0  {extended_bestchrom}  {best_fitness}", file=sys.stdout, flush=True)
 
     # Subsequent generations
     for i in range(1, generations + 1):
@@ -126,26 +126,26 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
             if stagnation_counter == stagnation_limit:
                 mutation_rate_index = (mutation_rate_index + 1) % len(mutation_rates)
                 current_mutation_rate = mutation_rates[mutation_rate_index]
-                print(f"# Stagnation detected. Change mutation rate to {current_mutation_rate}", file=sys.stdout)
+                print(f"# Stagnation detected. Change mutation rate to {current_mutation_rate}", file=sys.stdout, flush=True)
                 stagnation_counter = 0
         else:
             stagnation_counter = 0
 
         extended_bestchrom = extend_ordering.extend_ordering(bestchrom, 
             on_site_permutation, num_prefix, num_suffix)
-        print(f"{i}  {extended_bestchrom}  {best_fitness}", file=sys.stdout)
+        print(f"{i}  {extended_bestchrom}  {best_fitness}", file=sys.stdout, flush=True)
 
         # Check for checkpoint trigger file
         if os.path.exists(checkpoint_trigger):
             checkpoint_filename = f"{checkpoint_prefix}_gen{i}"
-            print(f"\n# Checkpoint trigger detected at generation {i}", file=sys.stdout)
-            print(f"# Writing FCIDUMP with current best ordering to '{checkpoint_filename}'", file=sys.stdout)
+            print(f"\n# Checkpoint trigger detected at generation {i}", file=sys.stdout, flush=True)
+            print(f"# Writing FCIDUMP with current best ordering to '{checkpoint_filename}'", file=sys.stdout, flush=True)
             FCIDUMPClass.dump_integrals(checkpoint_filename, extended_bestchrom)
-            print(f"# Checkpoint written. Removing trigger file and continuing...\n", file=sys.stdout)
+            print(f"# Checkpoint written. Removing trigger file and continuing...\n", file=sys.stdout, flush=True)
             try:
                 os.remove(checkpoint_trigger)
             except OSError as e:
-                print(f"# Warning: Could not remove trigger file: {e}", file=sys.stdout)
+                print(f"# Warning: Could not remove trigger file: {e}", file=sys.stdout, flush=True)
 
         with open(pop_filename, 'w') as log_file:
             log_file.write(f"# Chromosomes in the {i}th generation and their fitnesses\n")
@@ -155,7 +155,7 @@ def perform_GA(fitness_function, num_chroms, elite_size, mutation_rates,
                 log_file.write(f"{extended_chrom} {reduced_fitness_dict[chrom]}\n")
 
     # Generate an FCIDUMP file with the best ordering.
-    print("\n\nGenetic Algorithm simulation completed.", file=sys.stdout)
-    print(f"Best ordering found: {extended_bestchrom}", file=sys.stdout)
-    print("Writing reordered FCIDUMP to 'FCIDUMP_bestordering'", file=sys.stdout)
+    print("\n\nGenetic Algorithm simulation completed.", file=sys.stdout, flush=True)
+    print(f"Best ordering found: {extended_bestchrom}", file=sys.stdout, flush=True)
+    print("Writing reordered FCIDUMP to 'FCIDUMP_bestordering'", file=sys.stdout, flush=True)
     FCIDUMPClass.dump_integrals('FCIDUMP_bestordering', extended_bestchrom)
